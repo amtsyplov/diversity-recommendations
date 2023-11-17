@@ -1,4 +1,8 @@
 from .losses import LogSigmoidDifferenceLoss
+from .metrics import AUCScore
 
 
-__all__ = ["LogSigmoidDifferenceLoss"]
+__all__ = [
+    "AUCScore",
+    "LogSigmoidDifferenceLoss",
+]
