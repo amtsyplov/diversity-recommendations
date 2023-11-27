@@ -1,17 +1,16 @@
 import random
-from abc import ABC
-from typing import Iterator
+from typing import Optional
 
 import torch
 from torch.utils.data import IterableDataset
 
 
-class BPRSampling(IterableDataset, ABC):
+class BPRSampling(IterableDataset):
     def __init__(
             self,
             user_item_interactions: torch.LongTensor,
-            user_item_interactions_frozen: torch.LongTensor,
-            max_sampled: int,
+            user_item_interactions_frozen: Optional[torch.LongTensor] = None,
+            max_sampled: int = 20,
     ):
         """
 
@@ -30,14 +29,23 @@ class BPRSampling(IterableDataset, ABC):
         self.users = frozenset(torch.unique(user_item_interactions[:, 0]).tolist())
         self.items = frozenset(torch.unique(user_item_interactions[:, 1]).tolist())
 
-    def __iter__(self) -> Iterator[int, int, int]:
+    def __iter__(self):
         for user in self.users:
-            frozen = frozenset(self.frozen_interactions[self.frozen_interactions[:, 0] == user, 1])
             positives = frozenset(self.interactions[self.interactions[:, 0] == user, 1])
-            negatives = self.items - positives - frozen
+            negatives = self.items - positives
 
-            positives = random.choices(list(positives), k=self.max_sampled)
-            negatives = random.choices(list(negatives), k=self.max_sampled)
+            if self.frozen_interactions is not None:
+                frozen = frozenset(self.frozen_interactions[self.frozen_interactions[:, 0] == user, 1])
+                negatives -= frozen
 
-            for positive, negative in zip(positives, negatives):
-                yield user, positive, negative
+            if self.max_sampled > 0:
+                positives = random.choices(list(positives), k=self.max_sampled)
+                negatives = random.choices(list(negatives), k=self.max_sampled)
+
+                for positive, negative in zip(positives, negatives):
+                    yield user, positive, negative
+
+            else:
+                for positive in positives:
+                    for negative in negatives:
+                        yield user, positive, negative

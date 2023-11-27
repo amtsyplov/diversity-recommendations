@@ -1,5 +1,4 @@
 from abc import ABC
-from typing import Iterator, List
 
 import torch
 from torch.utils.data import IterableDataset
@@ -32,7 +31,7 @@ class WMRBSampling(IterableDataset, ABC):
         self.no_users = self.users.size(0)
         self.no_items = self.items.size(0)
 
-    def __iter__(self) -> Iterator[int, int, List[int], List[int]]:
+    def __iter__(self):
         for user in self.users:
             frozen = self.frozen_interactions[self.frozen_interactions[:, 0] == user, 1]
             positives = self.interactions[self.interactions[:, 0] == user, 1]

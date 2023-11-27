@@ -11,9 +11,9 @@ class MovieLens100K:
     no_users: int
     no_items: int
     no_ratings: int
-    train: torch.Tensor
-    test: torch.Tensor
-    validation: torch.Tensor
+    train: torch.LongTensor
+    test: torch.LongTensor
+    validation: torch.LongTensor
 
 
 def movie_lens_load(path: str, train_size: float, test_size: float) -> MovieLens100K:
@@ -31,7 +31,7 @@ def movie_lens_load(path: str, train_size: float, test_size: float) -> MovieLens
             v, k = line.split()
             info["no_" + k] = int(v)
 
-    rating = pd.read_csv("ml-100k/u.data", sep="\t", names=["user_id", "item_id", "rating", "timestamp"])\
+    rating = pd.read_csv(os.path.join(path, "u.data"), sep="\t", names=["user_id", "item_id", "rating", "timestamp"])\
         .sort_values("timestamp", ignore_index=True)
 
     # in initial data numerations starts from 1

@@ -12,5 +12,5 @@ class ScoreWithReduction(torch.nn.Module):
         if not self.reduce:
             return loss_values
         elif self.reduction == "mean":
-            return torch.mean(loss_values)
-        return torch.sum(loss_values)
+            return torch.sum(loss_values, dim=0) / loss_values.size(0)
+        return torch.sum(loss_values, dim=0)

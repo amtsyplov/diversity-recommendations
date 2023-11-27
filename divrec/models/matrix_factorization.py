@@ -16,3 +16,8 @@ class MatrixFactorization(torch.nn.Module):
         u = self.user_embeddings(user_id)
         i = self.item_embeddings(item_id)
         return torch.sum(u * i, dim=1)
+
+    def predict_top_k(self, k: int):
+        scores = self.user_embeddings.weight @ self.item_embeddings.weight.T
+        ids = torch.argsort(scores, dim=1)
+        return ids[:, :k]
