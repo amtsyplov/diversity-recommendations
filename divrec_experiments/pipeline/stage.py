@@ -3,8 +3,8 @@ from abc import ABCMeta, abstractmethod
 
 
 class Container:
-    def __init__(self, elements: Dict[str, Any]):
-        self.elements = elements
+    def __init__(self, elements: Optional[Dict[str, Any]] = None):
+        self.elements = elements if elements is not None else dict()
 
     def __getitem__(self, item):
         return self.elements[item]

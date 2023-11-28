@@ -1,0 +1,17 @@
+load_dataset:
+  path: /Users/alexey.tsyplov/Projects/diversity-recommendations/divrec_experiments/data/ml-100k
+  train_size: 0.7
+  test_size: 0.2
+train_model:
+  train_max_sampled: 100
+  train_batch_size: 100
+  validation_max_sampled: 100
+  validation_batch_size: 100
+  embedding_dim: 300
+  lr: 0.001
+  epochs: 10
+  model_path: /Users/alexey.tsyplov/Projects/diversity-recommendations/divrec_experiments/experiments/matrix_factorization_ml100k
+test_model:
+  model_path: /Users/alexey.tsyplov/Projects/diversity-recommendations/divrec_experiments/experiments/matrix_factorization_ml100k
+  embedding_dim": 300
+  max_sampled": -1
