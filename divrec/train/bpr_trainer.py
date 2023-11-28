@@ -4,14 +4,15 @@ import torch
 from torch.utils.data import DataLoader
 
 from divrec.datasets import BPRSampling
+from divrec.losses import LogSigmoidDifferenceLoss
 from divrec.train import Trainer
 
 
 class BPRTrainer(Trainer):
     def __init__(
             self,
+            model: torch.nn.Module,
             optimizer: torch.optim.Optimizer,
-            loss_function: torch.nn.Module,
             score_function: torch.nn.Module,
             train: BPRSampling,
             validation: Optional[BPRSampling] = None,
@@ -26,8 +27,9 @@ class BPRTrainer(Trainer):
         self.validation_batch_size = validation_batch_size
         Trainer.__init__(
             self,
+            model,
             optimizer,
-            loss_function,
+            LogSigmoidDifferenceLoss(),
             score_function,
             DataLoader(train, batch_size=train_batch_size),
             validation_loader=DataLoader(validation, batch_size=train_batch_size),
@@ -35,20 +37,20 @@ class BPRTrainer(Trainer):
             logfile=logfile,
         )
 
-    def fit_partial(self, model: torch.nn.Module, validation_mode: bool = False):
+    def fit_partial(self, validation_mode: bool = False):
         loader = self.validation_loader if validation_mode else self.train_loader
         loss_value = 0.0
         score_value = 0.0
         batch_count = 0
 
         if validation_mode:
-            model.eval()
+            self.model.eval()
         else:
-            model.train()
+            self.model.train()
 
         for user, positive, negative in loader:
-            positive_predictions = model(user, positive)
-            negative_predictions = model(user, negative)
+            positive_predictions = self.model(user, positive)
+            negative_predictions = self.model(user, negative)
 
             loss = self.loss_function(positive_predictions, negative_predictions)
             score = self.score_function(positive_predictions, negative_predictions)

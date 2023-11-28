@@ -10,6 +10,7 @@ from divrec.utils import get_logger
 class Trainer(metaclass=ABCMeta):
     def __init__(
             self,
+            model: torch.nn.Module,
             optimizer: torch.optim.Optimizer,
             loss_function: torch.nn.Module,
             score_function: torch.nn.Module,
@@ -18,6 +19,7 @@ class Trainer(metaclass=ABCMeta):
             epochs: int = 10,
             logfile: Optional[str] = None,
     ):
+        self.model = model
         self.optimizer = optimizer
         self.loss_function = loss_function
         self.score_function = score_function
@@ -26,19 +28,19 @@ class Trainer(metaclass=ABCMeta):
         self.epochs = epochs
         self.logger = get_logger(self.__class__.__name__, filepath=logfile)
 
-    def fit(self, model: torch.nn.Module):
+    def fit(self):
         train_losses = []
         train_scores = []
         validation_losses = []
         validation_scores = []
         for epoch in range(self.epochs):
-            batch_avg_loss, batch_avg_score = self.fit_partial(model)
+            batch_avg_loss, batch_avg_score = self.fit_partial()
             train_losses.append(batch_avg_loss)
             train_scores.append(batch_avg_score)
             self.logger.info("Train " + self.epoch_message(epoch, batch_avg_loss, batch_avg_score))
 
             if self.validation_loader is not None:
-                batch_avg_loss, batch_avg_score = self.fit_partial(model, validation_mode=True)
+                batch_avg_loss, batch_avg_score = self.fit_partial(validation_mode=True)
                 validation_losses.append(batch_avg_loss)
                 validation_scores.append(batch_avg_score)
                 self.logger.info("Validation " + self.epoch_message(epoch, batch_avg_loss, batch_avg_score))
@@ -64,5 +66,5 @@ class Trainer(metaclass=ABCMeta):
         return f"{self.print_epoch(epoch)} {self.print_loss(loss)} {self.print_score(score)}"
 
     @abstractmethod
-    def fit_partial(self, model: torch.nn.Module, validation_mode: bool = False):
+    def fit_partial(self, validation_mode: bool = False):
         raise NotImplemented
