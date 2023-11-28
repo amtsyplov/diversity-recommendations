@@ -1,0 +1,1 @@
+`divrec.train` package provides special functions and utils to train models with diffirent losses and regularization functions "from box"
