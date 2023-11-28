@@ -1,5 +1,5 @@
 from divrec_experiments.datasets import movie_lens_load
-from divrec_experiments.pipeline import Container, stage
+from divrec_pipelines.pipeline import Container, stage
 
 
 @stage(configuration={

@@ -5,7 +5,7 @@ from divrec.metrics import AUCScore
 from divrec.models import MatrixFactorization
 from divrec.train import BPRTrainer
 from divrec_experiments.datasets import MovieLens100K
-from divrec_experiments.pipeline import Container, stage
+from divrec_pipelines.pipeline import Container, stage
 
 
 @stage(configuration={

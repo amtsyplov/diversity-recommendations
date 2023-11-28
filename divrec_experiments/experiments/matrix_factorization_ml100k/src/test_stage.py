@@ -8,7 +8,7 @@ from divrec.metrics import AUCScore, EntropyDiversityScore
 from divrec.models import MatrixFactorization
 from divrec.utils import get_logger
 from divrec_experiments.datasets import MovieLens100K
-from divrec_experiments.pipeline import Container, stage
+from divrec_pipelines.pipeline import Container, stage
 
 
 def evaluate_model(
