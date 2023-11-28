@@ -6,7 +6,7 @@ LOG_FORMAT = f"%(asctime)s %(name)s [%(levelname)s] %(message)s"
 
 def get_file_handler(filepath: str):
     file_handler = logging.FileHandler(filepath)
-    file_handler.setLevel(logging.WARNING)
+    file_handler.setLevel(logging.INFO)
     file_handler.setFormatter(logging.Formatter(LOG_FORMAT))
     return file_handler
 

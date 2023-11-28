@@ -16,7 +16,7 @@ from divrec_experiments.pipeline import Container, stage
     "embedding_dim": 300,
     "lr": 0.001,
     "epochs": 10,
-    "model_path": "models",
+    "model_path": "workdir",
     "logfile": "logfile.log"
 })
 def train_model(config, arg):

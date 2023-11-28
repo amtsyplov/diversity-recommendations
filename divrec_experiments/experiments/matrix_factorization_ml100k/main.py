@@ -1,5 +1,5 @@
-from .src import load_dataset, test_model, train_model
 from divrec_experiments.pipeline import Pipeline
+from divrec_experiments.experiments.matrix_factorization_ml100k.src import load_dataset, test_model, train_model
 
 
 if __name__ == "__main__":

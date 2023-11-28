@@ -33,6 +33,7 @@ class Trainer(metaclass=ABCMeta):
         train_scores = []
         validation_losses = []
         validation_scores = []
+        self.logger.info("Start training")
         for epoch in range(self.epochs):
             batch_avg_loss, batch_avg_score = self.fit_partial()
             train_losses.append(batch_avg_loss)
@@ -45,6 +46,7 @@ class Trainer(metaclass=ABCMeta):
                 validation_scores.append(batch_avg_score)
                 self.logger.info("Validation " + self.epoch_message(epoch, batch_avg_loss, batch_avg_score))
 
+        self.logger.info("Finish training")
         return train_losses, train_scores, validation_losses, validation_scores
 
     def print_loss(self, loss) -> str:
@@ -55,12 +57,12 @@ class Trainer(metaclass=ABCMeta):
 
     def print_epoch(self, epoch) -> str:
         if self.epochs >= 1000:
-            return f"Epoch [{epoch:4d}/{self.epochs:4d}]"
+            return f"Epoch [{1 + epoch:4d}/{self.epochs:4d}]"
         elif self.epochs >= 100:
-            return f"Epoch [{epoch:3d}/{self.epochs:3d}]"
+            return f"Epoch [{1 + epoch:3d}/{self.epochs:3d}]"
         elif self.epochs >= 10:
-            return f"Epoch [{epoch:2d}/{self.epochs:2d}]"
-        return f"Epoch [{epoch}/{self.epochs}]"
+            return f"Epoch [{1 + epoch:2d}/{self.epochs:2d}]"
+        return f"Epoch [{1 + epoch}/{self.epochs}]"
 
     def epoch_message(self, epoch, loss, score):
         return f"{self.print_epoch(epoch)} {self.print_loss(loss)} {self.print_score(score)}"
