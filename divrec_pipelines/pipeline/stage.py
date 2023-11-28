@@ -1,6 +1,8 @@
 from typing import Any, Callable, Dict, Optional
 from abc import ABCMeta, abstractmethod
 
+from divrec.utils import get_logger, get_file_handler
+
 
 class Container:
     def __init__(self, elements: Optional[Dict[str, Any]] = None):
@@ -11,8 +13,9 @@ class Container:
 
 
 class Stage(metaclass=ABCMeta):
-    def __init__(self, config):
+    def __init__(self, config: Dict[str, Any]):
         self.__config = config
+        self.logger = get_logger(self.name)
 
     def __call__(self, arg: Optional[Container] = None) -> Container:
         return self.call(self.config, arg)
@@ -23,9 +26,13 @@ class Stage(metaclass=ABCMeta):
 
     @config.setter
     def config(self, value: Dict[str, Any]):
+        if "logfile" in value:
+            self.logger.addHandler(get_file_handler(value["logfile"]))
+
         for k, v in value.items():
             if k in self.__config:
                 self.config[k] = v
+                self.logger.info(f"Set {k} = {v}")
 
     @property
     @abstractmethod

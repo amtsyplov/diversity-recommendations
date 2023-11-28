@@ -162,3 +162,5 @@ cython_debug/
 divrec_experiments/data/
 
 **/.DS_Store
+
+**/workdir/
