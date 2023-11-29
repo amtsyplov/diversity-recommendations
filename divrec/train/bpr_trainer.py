@@ -52,7 +52,7 @@ class BPRTrainer(Trainer):
             positive_predictions = self.model(user, positive)
             negative_predictions = self.model(user, negative)
 
-            loss = self.loss_function(positive_predictions, negative_predictions)
+            loss = -self.loss_function(positive_predictions, negative_predictions)
             score = self.score_function(positive_predictions, negative_predictions)
 
             if not validation_mode:
