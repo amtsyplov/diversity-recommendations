@@ -5,6 +5,7 @@ from divrec.metrics import AUCScore
 from divrec.models import MatrixFactorization
 from divrec.train import BPRTrainer
 from divrec_experiments.datasets import MovieLens100K
+from divrec_experiments.utils import to_json
 from divrec_pipelines.pipeline import Container, stage
 
 
@@ -17,7 +18,8 @@ from divrec_pipelines.pipeline import Container, stage
     "lr": 0.001,
     "epochs": 10,
     "model_path": "workdir",
-    "logfile": "logfile.log"
+    "logfile": "logfile.log",
+    "train_scores_filepath": "scores.json",
 })
 def train_model(config, arg):
     dataset: MovieLens100K = arg["data"]
@@ -51,7 +53,8 @@ def train_model(config, arg):
         logfile=config["logfile"],
     )
 
-    trainer.fit()
+    scores = trainer.fit()
+    to_json([*scores], config["train_scores_filepath"])
 
     torch.save(model.state_dict(), config["model_path"])
     return Container(elements={"data": dataset})

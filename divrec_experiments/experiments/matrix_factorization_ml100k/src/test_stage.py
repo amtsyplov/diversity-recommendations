@@ -5,10 +5,22 @@ from torch.utils.data import DataLoader
 
 from divrec.datasets import BPRSampling
 from divrec.metrics import AUCScore, EntropyDiversityScore
+from divrec.metrics import recall_at_k, average_precision_at_k, precision_at_k, normalized_discounted_cumulative_gain
 from divrec.models import MatrixFactorization
 from divrec.utils import get_logger
 from divrec_experiments.datasets import MovieLens100K
+from divrec_experiments.utils import to_json
 from divrec_pipelines.pipeline import Container, stage
+
+
+def evaluate_default_recommendation_metrics(interactions: torch.LongTensor, recommendations: torch.LongTensor):
+    k = recommendations.size(1)
+    return {
+        f"recall@{k}": torch.mean(recall_at_k(interactions, recommendations)).item(),
+        f"precision@{k}": torch.mean(precision_at_k(interactions, recommendations)).item(),
+        f"MAP@{k}": torch.mean(average_precision_at_k(interactions, recommendations)).item(),
+        f"nDCG@{k}": torch.mean(normalized_discounted_cumulative_gain(interactions, recommendations)).item(),
+    }
 
 
 def evaluate_model(
@@ -37,6 +49,7 @@ def evaluate_model(
     "max_sampled": -1,
     "test_scores_filepath": "scores.json",
     "logfile": "logfile.log",
+    "k": 10,
 })
 def test_model(config, arg):
     dataset: MovieLens100K = arg["data"]
@@ -57,7 +70,7 @@ def test_model(config, arg):
 
     test_auc_value = evaluate_model(test_loader, model, score_function)
 
-    predictions = model.predict_top_k(10)
+    predictions = model.predict_top_k(config["k"])
     entropy_diversity_score = EntropyDiversityScore()
     entropy_diversity_value = entropy_diversity_score(predictions).item()
 
@@ -65,11 +78,10 @@ def test_model(config, arg):
         "auc_score": test_auc_value,
         "entropy_diversity_score": entropy_diversity_value,
     }
+    scores.update(evaluate_default_recommendation_metrics(dataset.test, predictions))
 
     logger = get_logger(__name__, config["logfile"])
     logger.info("Test scores:\n" + "\n".join([f"{k}: {v:.6f}" for k, v in scores.items()]))
 
-    with open(config["test_scores_filepath"], mode="w") as file:
-        json.dump(scores, file)
-
+    to_json(scores, config["test_scores_filepath"])
     return Container(elements=scores)
