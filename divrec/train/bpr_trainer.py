@@ -3,7 +3,7 @@ from typing import Optional
 import torch
 from torch.utils.data import DataLoader
 
-from divrec.datasets import BPRSampling
+from divrec.loaders import BPRSampling
 from divrec.losses import LogSigmoidDifferenceLoss
 from divrec.train import Trainer
 
