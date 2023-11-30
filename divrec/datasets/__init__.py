@@ -1,7 +1,4 @@
-from .bpr_sampling import BPRSampling
-from .wmrb_sampling import WMRBSampling
+from .datasets import UserItemInteractionsDataset
 
-__all__ = [
-    "BPRSampling",
-    "WMRBSampling",
-]
+
+__all__ = ["UserItemInteractionsDataset"]
