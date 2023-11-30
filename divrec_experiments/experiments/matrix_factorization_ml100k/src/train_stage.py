@@ -1,6 +1,6 @@
 import torch
 
-from divrec.datasets import BPRSampling
+from divrec.loaders import BPRSampling
 from divrec.metrics import AUCScore
 from divrec.models import MatrixFactorization
 from divrec.train import BPRTrainer
