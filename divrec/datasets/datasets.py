@@ -1,7 +1,32 @@
-from typing import Optional
-from dataclasses import dataclass
+from typing import List, Optional
+from dataclasses import dataclass, field
 
 import torch
+
+
+@dataclass
+class Features:
+    """
+    Abstraction for table with named columns
+    """
+    features: torch.Tensor = None
+    feature_names: List[str] = field(default_factory=list)
+
+    number_of_features: int = 0
+
+    def __post_init__(self):
+        self.number_of_features = self.features.size(0)
+        assert len(self.feature_names) == self.number_of_features
+
+    def __len__(self):
+        return self.features.size(0)
+
+    def __getitem__(self, item):
+        """Gives column by name"""
+        return self.features[:, self.feature_names.index(item)]
+
+    def __contains__(self, item):
+        return item in self.feature_names
 
 
 @dataclass
@@ -14,8 +39,8 @@ class UserItemInteractionsDataset:
     """
     interactions: Optional[torch.LongTensor] = None
     interaction_scores: Optional[torch.Tensor] = None
-    user_features: Optional[torch.Tensor] = None
-    item_features: Optional[torch.Tensor] = None
+    user_features: Optional[Features] = None
+    item_features: Optional[Features] = None
 
     number_of_interactions: int = 0
     number_of_users: int = 0
