@@ -1,9 +1,11 @@
 import math
 import torch
 
+from divrec.losses.base_losses import RecommendationsAwareLoss
 
-class EntropyDiversityScore(torch.nn.Module):
-    def forward(self, recommendations: torch.Tensor):
+
+class EntropyDiversityScore(RecommendationsAwareLoss):
+    def forward(self, interactions: torch.LongTensor, recommendations: torch.LongTensor):
         _, counts = torch.unique(recommendations, return_counts=True)
         probabilities = counts / counts.sum()
         actual = -torch.sum(probabilities * torch.log(probabilities))

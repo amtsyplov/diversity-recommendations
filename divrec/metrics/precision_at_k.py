@@ -1,6 +1,6 @@
 import torch
 
-from divrec.utils import ScoreWithReduction
+from divrec.losses.base_losses import RecommendationsAwareLoss
 
 
 def precision_at_k(interactions: torch.LongTensor, recommendations: torch.LongTensor):
@@ -20,11 +20,9 @@ def precision_at_k(interactions: torch.LongTensor, recommendations: torch.LongTe
     return loss_values / k
 
 
-class PrecisionAtKScore(ScoreWithReduction):
-    def forward(self, interactions: torch.LongTensor, recommendations: torch.LongTensor):
-        return self.reduce_loss_values(precision_at_k(interactions, recommendations))
+class PrecisionAtKScore(RecommendationsAwareLoss):
+    def recommendations_loss(self, interactions: torch.LongTensor, recommendations: torch.LongTensor) -> torch.Tensor:
+        return precision_at_k(interactions, recommendations)
 
 
-class HitRateScore(ScoreWithReduction):
-    def forward(self, interactions: torch.LongTensor, recommendations: torch.LongTensor):
-        return self.reduce_loss_values(precision_at_k(interactions, recommendations))
+HitRateScore = PrecisionAtKScore

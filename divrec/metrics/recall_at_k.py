@@ -1,6 +1,6 @@
 import torch
 
-from divrec.utils import ScoreWithReduction
+from divrec.losses.base_losses import RecommendationsAwareLoss
 
 
 def recall_at_k(interactions: torch.LongTensor, recommendations: torch.LongTensor):
@@ -20,6 +20,6 @@ def recall_at_k(interactions: torch.LongTensor, recommendations: torch.LongTenso
     return loss_values
 
 
-class RecallAtKScore(ScoreWithReduction):
-    def forward(self, interactions: torch.LongTensor, recommendations: torch.LongTensor):
-        return self.reduce_loss_values(recall_at_k(interactions, recommendations))
+class RecallAtKScore(RecommendationsAwareLoss):
+    def recommendations_loss(self, interactions: torch.LongTensor, recommendations: torch.LongTensor) -> torch.Tensor:
+        return recall_at_k(interactions, recommendations)

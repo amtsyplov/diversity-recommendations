@@ -1,6 +1,6 @@
 import torch
 
-from divrec.utils import ScoreWithReduction
+from divrec.losses.base_losses import RecommendationsAwareLoss
 
 
 def normalized_discounted_cumulative_gain(interactions: torch.LongTensor, recommendations: torch.LongTensor):
@@ -21,7 +21,6 @@ def normalized_discounted_cumulative_gain(interactions: torch.LongTensor, recomm
     return loss_values / torch.sum(1 / discount)
 
 
-class NDCGScore(ScoreWithReduction):
-    def forward(self, interactions: torch.LongTensor, recommendations: torch.LongTensor):
-        loss_values = normalized_discounted_cumulative_gain(interactions, recommendations)
-        return self.reduce_loss_values(loss_values)
+class NDCGScore(RecommendationsAwareLoss):
+    def recommendations_loss(self, interactions: torch.LongTensor, recommendations: torch.LongTensor) -> torch.Tensor:
+        return normalized_discounted_cumulative_gain(interactions, recommendations)

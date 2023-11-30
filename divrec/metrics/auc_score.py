@@ -1,9 +1,8 @@
 import torch
 
-from divrec.utils import ScoreWithReduction
+from divrec.losses.base_losses import PairWiseLoss
 
 
-class AUCScore(ScoreWithReduction):
-    def forward(self, x: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
-        loss_values = (x >= y).long()
-        return self.reduce_loss_values(loss_values)
+class AUCScore(PairWiseLoss):
+    def pair_wise(self, positives: torch.Tensor, negatives: torch.Tensor) -> torch.Tensor:
+        return (positives >= negatives).int()
