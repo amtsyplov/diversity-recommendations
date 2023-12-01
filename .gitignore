@@ -160,6 +160,7 @@ cython_debug/
 .idea/
 
 divrec_experiments/data/
+divrec_experiments/.DS_Store
 
 **/.DS_Store
 
