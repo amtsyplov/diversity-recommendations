@@ -54,7 +54,7 @@ class UserItemInteractionsDataset:
             assert no_columns == 2
 
             if self.interaction_scores is None:
-                self.interaction_scores = torch.zeros(self.number_of_interactions)
+                self.interaction_scores = torch.ones(self.number_of_interactions)
             assert self.interaction_scores.size(0) == self.number_of_interactions
 
             users = torch.unique(self.interactions[:, 0])

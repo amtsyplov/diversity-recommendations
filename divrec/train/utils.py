@@ -10,32 +10,34 @@ from divrec.models import RankingModel
 def point_wise_score_loop(
     dataset: PointWiseDataset,
     model: RankingModel,
-    loss: PointWiseLoss,
+    losses: List[PointWiseLoss],
     **loader_params,
 ):
     model.eval()
     loader = dataset.loader(**loader_params)
-    loss_values = []
+    loss_values = {loss.__name__: list() for loss in losses}
     for user_id, item_id, user_features, item_features, true_relevance in loader:
         predicted_relevance = model(user_id, item_id, user_features, item_features)
-        loss_values.append(loss.point_wise(true_relevance, predicted_relevance))
-    return loss.reduce_loss_values(torch.concatenate(loss_values))
+        for loss in losses:
+            loss_values[loss.__name__].append(loss.point_wise(true_relevance, predicted_relevance))
+    return [loss.reduce_loss_values(torch.concatenate(loss_values[loss.__name__])) for loss in losses]
 
 
 def pair_wise_score_loop(
     dataset: PairWiseDataset,
     model: RankingModel,
-    loss: PairWiseLoss,
+    losses: List[PairWiseLoss],
     **loader_params,
 ):
     model.eval()
     loader = dataset.loader(**loader_params)
-    loss_values = []
+    loss_values = {loss.__name__: list() for loss in losses}
     for user_id, pos, neg, user_features, pos_features, neg_features in loader:
         positives = model(user_id, pos, user_features, pos_features)
         negatives = model(user_id, neg, user_features, neg_features)
-        loss_values.append(loss.pair_wise(positives, negatives))
-    return loss.reduce_loss_values(torch.concatenate(loss_values))
+        for loss in losses:
+            loss_values[loss.__name__].append(loss.pair_wise(positives, negatives))
+    return [loss.reduce_loss_values(torch.concatenate(loss_values[loss.__name__])) for loss in losses]
 
 
 def get_model_recommendations(
@@ -53,11 +55,13 @@ def get_model_recommendations(
 def recommendations_score_loop(
     dataset: RankingDataset,
     model: RankingModel,
-    loss: RecommendationsAwareLoss,
+    losses: List[RecommendationsAwareLoss],
     number_of_recommendations: int,
 ):
     model.eval()
-    return loss(dataset.data.interactions, get_model_recommendations(dataset, model, number_of_recommendations))
+    interactions = dataset.data.interactions
+    recommendations = get_model_recommendations(dataset, model, number_of_recommendations)
+    return [loss(interactions, recommendations) for loss in losses]
 
 
 def point_wise_train_loop(

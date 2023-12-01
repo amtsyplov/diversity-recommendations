@@ -10,4 +10,4 @@ class LogSigmoidDifferenceLoss(PairWiseLoss):
     def pair_wise(
         self, positives: torch.Tensor, negatives: torch.Tensor
     ) -> torch.Tensor:
-        return self.log_sigmoid(positives - negatives)
+        return -self.log_sigmoid(positives - negatives)
