@@ -1,4 +1,4 @@
-from .base_datasets import PairWiseRow, PairWiseDataset, PointWiseRow, PointWiseDataset
+from .base_datasets import PairWiseRow, PairWiseDataset, PointWiseRow, PointWiseDataset, RankingRow, RankingDataset
 from .storages import UserItemInteractionsDataset, Features
 
 
@@ -9,4 +9,6 @@ __all__ = [
     "PairWiseDataset",
     "PointWiseRow",
     "PointWiseDataset",
+    "RankingDataset",
+    "RankingRow",
 ]

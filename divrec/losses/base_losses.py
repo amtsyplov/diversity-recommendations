@@ -12,7 +12,7 @@ class DatasetAwareLoss:
 
 class ScoreWithReduction:
     def __init__(self, reduce: bool = True, reduction: str = "mean"):
-        assert reduction in ["node", "mean", "sum"]
+        assert reduction in ["none", "mean", "sum"]
         self.reduce = reduce and reduction != "none"
         self.reduction = reduction
 

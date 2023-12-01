@@ -26,6 +26,15 @@ PairWiseRow = Tuple[
 ]
 
 
+RankingRow = Tuple[
+    torch.LongTensor,  # repeated user_id
+    torch.LongTensor,  # positive item_id
+    torch.LongTensor,  # negative item_id
+    Optional[torch.Tensor],  # repeated user features
+    Optional[torch.Tensor],  # negative item features
+]
+
+
 class PointWiseDataset(Dataset):
     def __init__(self, data: UserItemInteractionsDataset):
         self.data = data
@@ -48,8 +57,8 @@ class PairWiseDataset(IterableDataset):
     def __init__(
             self,
             data: UserItemInteractionsDataset,
-            frozen: UserItemInteractionsDataset,
-            max_sampled: int
+            frozen: Optional[UserItemInteractionsDataset] = None,
+            max_sampled: int = 100
     ):
         self.data = data
         self.frozen = frozen
@@ -60,8 +69,12 @@ class PairWiseDataset(IterableDataset):
         for user_id in range(self.data.number_of_users):
             user_features = get_user_features(self.data, user_id)
             positives = frozenset(self.data.interactions[self.data.interactions[:, 0] == user_id, 1].tolist())
-            frozen = frozenset(self.frozen.interactions[self.frozen.interactions[:, 0] == user_id, 1].tolist())
-            negatives = items - positives - frozen
+
+            if self.frozen is not None:
+                frozen = frozenset(self.frozen.interactions[self.frozen.interactions[:, 0] == user_id, 1].tolist())
+                negatives = items - positives - frozen
+            else:
+                negatives = items - positives
 
             if self.max_sampled > 0:
                 positives = random.choices(list(positives), k=self.max_sampled)
@@ -82,3 +95,50 @@ class PairWiseDataset(IterableDataset):
 
     def loader(self, **loader_params) -> DataLoader:
         return DataLoader(self, **loader_params)
+
+
+class RankingDataset(IterableDataset):
+    """
+    Maybe the most difficult to understand dataset.
+    Has no loader method. In one iteration gives
+    negative items for one user.
+
+    Gives user_id repeated as a torch.LongTensor and
+    len(user_id) == len(negatives)
+
+    Gives user_features repeated as a torch.Tensor and
+    len(user_features) == len(negatives)
+
+    While building negatives remove only frozen interactions.
+    """
+    def __init__(
+        self,
+        data: UserItemInteractionsDataset,
+        frozen: Optional[UserItemInteractionsDataset] = None,
+    ):
+        self.data = data
+        self.frozen = frozen
+
+    def __iter__(self) -> Iterator[RankingRow]:
+        items = frozenset(range(self.data.number_of_items))
+        for user_id in range(self.data.number_of_users):
+            if self.frozen is not None:
+                frozen = frozenset(self.frozen.interactions[self.frozen.interactions[:, 0] == user_id, 1].tolist())
+                negatives = list(items - frozen)
+            else:
+                negatives = items
+
+            user_features = None
+            if self.data.has_user_features():
+                user_features = torch.concatenate([self.data.user_features.features for _ in negatives])
+
+            item_features = None
+            if self.data.has_user_features():
+                item_features = torch.concatenate([get_item_features(self.data, item_id) for item_id in negatives])
+
+            yield (
+                torch.full((len(negatives),), user_id),
+                negatives,
+                user_features,
+                item_features
+            )
