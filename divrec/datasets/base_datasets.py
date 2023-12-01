@@ -2,7 +2,7 @@ import random
 from typing import Iterator, Optional, Tuple
 
 import torch
-from torch.utils.data import Dataset, IterableDataset
+from torch.utils.data import Dataset, IterableDataset, DataLoader
 
 from divrec.datasets.storages import UserItemInteractionsDataset, get_item_features, get_user_features
 
@@ -40,6 +40,9 @@ class PointWiseDataset(Dataset):
         interaction_score = self.data.interaction_scores[item_id]
         return user_id, item_id, user_features, item_features, interaction_score
 
+    def loader(self, **loader_params) -> DataLoader:
+        return DataLoader(self, **loader_params)
+
 
 class PairWiseDataset(IterableDataset):
     def __init__(
@@ -76,3 +79,6 @@ class PairWiseDataset(IterableDataset):
                         positive_item_features,
                         negative_item_features,
                     )
+
+    def loader(self, **loader_params) -> DataLoader:
+        return DataLoader(self, **loader_params)
