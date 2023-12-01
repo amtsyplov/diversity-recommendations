@@ -9,6 +9,7 @@ class Features:
     """
     Abstraction for table with named columns
     """
+
     features: torch.Tensor = None
     feature_names: List[str] = field(default_factory=list)
 
@@ -37,6 +38,7 @@ class UserItemInteractionsDataset:
     features. All data parts are optional because depends on real
     datasets.
     """
+
     interactions: Optional[torch.LongTensor] = None
     interaction_scores: Optional[torch.Tensor] = None
     user_features: Optional[Features] = None

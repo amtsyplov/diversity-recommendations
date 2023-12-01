@@ -3,7 +3,9 @@ import torch
 from divrec.losses.base_losses import RecommendationsAwareLoss
 
 
-def normalized_discounted_cumulative_gain(interactions: torch.LongTensor, recommendations: torch.LongTensor):
+def normalized_discounted_cumulative_gain(
+    interactions: torch.LongTensor, recommendations: torch.LongTensor
+):
     """
     :param interactions: torch.LongTensor with two columns [user_id, item_id],
     asserts user_id = 0, 1, ..., no_users - 1
@@ -22,5 +24,7 @@ def normalized_discounted_cumulative_gain(interactions: torch.LongTensor, recomm
 
 
 class NDCGScore(RecommendationsAwareLoss):
-    def recommendations_loss(self, interactions: torch.LongTensor, recommendations: torch.LongTensor) -> torch.Tensor:
+    def recommendations_loss(
+        self, interactions: torch.LongTensor, recommendations: torch.LongTensor
+    ) -> torch.Tensor:
         return normalized_discounted_cumulative_gain(interactions, recommendations)

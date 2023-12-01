@@ -9,18 +9,20 @@ from divrec_experiments.utils import to_json
 from divrec_pipelines.pipeline import Container, stage
 
 
-@stage(configuration={
-    "train_max_sampled": 100,
-    "train_batch_size": 100,
-    "validation_max_sampled": 100,
-    "validation_batch_size": 100,
-    "embedding_dim": 300,
-    "lr": 0.001,
-    "epochs": 10,
-    "model_path": "workdir",
-    "logfile": "logfile.log",
-    "train_scores_filepath": "scores.json",
-})
+@stage(
+    configuration={
+        "train_max_sampled": 100,
+        "train_batch_size": 100,
+        "validation_max_sampled": 100,
+        "validation_batch_size": 100,
+        "embedding_dim": 300,
+        "lr": 0.001,
+        "epochs": 10,
+        "model_path": "workdir",
+        "logfile": "logfile.log",
+        "train_scores_filepath": "scores.json",
+    }
+)
 def train_model(config, arg):
     dataset: MovieLens100K = arg["data"]
     train_dataset = BPRSampling(dataset.train, max_sampled=config["train_max_sampled"])
@@ -28,13 +30,11 @@ def train_model(config, arg):
     validation_dataset = BPRSampling(
         dataset.validation,
         user_item_interactions_frozen=dataset.train,
-        max_sampled=config["validation_max_sampled"]
+        max_sampled=config["validation_max_sampled"],
     )
 
     model = MatrixFactorization(
-        dataset.no_users,
-        dataset.no_items,
-        embedding_dim=config["embedding_dim"]
+        dataset.no_users, dataset.no_items, embedding_dim=config["embedding_dim"]
     )
     model.to("cpu")
 

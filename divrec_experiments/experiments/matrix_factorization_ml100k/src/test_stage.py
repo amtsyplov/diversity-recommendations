@@ -8,7 +8,7 @@ from divrec.metrics import (
     RecallAtKScore,
     MeanAveragePrecisionAtKScore,
     PrecisionAtKScore,
-    NDCGScore
+    NDCGScore,
 )
 from divrec.models import MatrixFactorization
 from divrec.utils import get_logger
@@ -18,8 +18,8 @@ from divrec_pipelines.pipeline import Container, stage
 
 
 def evaluate_auc_roc(
-        loader: DataLoader,
-        model: MatrixFactorization,
+    loader: DataLoader,
+    model: MatrixFactorization,
 ) -> float:
     score_function = AUCScore()
     score_value = 0.0
@@ -36,26 +36,32 @@ def evaluate_auc_roc(
     return score_value / batch_count
 
 
-@stage(configuration={
-    "model_path": "workdir",
-    "embedding_dim": 300,
-    "max_sampled": -1,
-    "test_scores_filepath": "scores.json",
-    "logfile": "logfile.log",
-    "k": 10,
-})
+@stage(
+    configuration={
+        "model_path": "workdir",
+        "embedding_dim": 300,
+        "max_sampled": -1,
+        "test_scores_filepath": "scores.json",
+        "logfile": "logfile.log",
+        "k": 10,
+    }
+)
 def test_model(config, arg):
     dataset: MovieLens100K = arg["data"]
     logger = get_logger(__name__, config["logfile"])
 
-    model = MatrixFactorization(dataset.no_users, dataset.no_items, embedding_dim=config["embedding_dim"])
+    model = MatrixFactorization(
+        dataset.no_users, dataset.no_items, embedding_dim=config["embedding_dim"]
+    )
     model.load_state_dict(torch.load(config["model_path"]))
     model.to("cpu")
     model.eval()
 
     test_dataset = BPRSampling(
         dataset.test,
-        user_item_interactions_frozen=torch.concatenate((dataset.train, dataset.validation), dim=0).long(),
+        user_item_interactions_frozen=torch.concatenate(
+            (dataset.train, dataset.validation), dim=0
+        ).long(),
         max_sampled=config["max_sampled"],
     )
 
@@ -77,41 +83,61 @@ def test_model(config, arg):
     try:
         score_value = score_function(dataset.test, predictions)
         scores["entropy_diversity_score"] = score_value.item()
-        logger.info(f"Successfully evaluate {type(score_function).__name__} score: {score_value:.6f}")
+        logger.info(
+            f"Successfully evaluate {type(score_function).__name__} score: {score_value:.6f}"
+        )
     except Exception as exception:
-        logger.warn(f"Error while {type(score_function).__name__} score evaluating:\n{exception}")
+        logger.warn(
+            f"Error while {type(score_function).__name__} score evaluating:\n{exception}"
+        )
 
     score_function = RecallAtKScore()
     try:
         score_value = score_function(dataset.test, predictions)
         scores[f"recall@{config['k']}"] = score_value.item()
-        logger.info(f"Successfully evaluate {type(score_function).__name__} score: {score_value:.6f}")
+        logger.info(
+            f"Successfully evaluate {type(score_function).__name__} score: {score_value:.6f}"
+        )
     except Exception as exception:
-        logger.warn(f"Error while {type(score_function).__name__} score evaluating:\n{exception}")
+        logger.warn(
+            f"Error while {type(score_function).__name__} score evaluating:\n{exception}"
+        )
 
     score_function = PrecisionAtKScore()
     try:
         score_value = score_function(dataset.test, predictions)
         scores[f"precision@{config['k']}"] = score_value.item()
-        logger.info(f"Successfully evaluate {type(score_function).__name__} score: {score_value:.6f}")
+        logger.info(
+            f"Successfully evaluate {type(score_function).__name__} score: {score_value:.6f}"
+        )
     except Exception as exception:
-        logger.warn(f"Error while {type(score_function).__name__} score evaluating:\n{exception}")
+        logger.warn(
+            f"Error while {type(score_function).__name__} score evaluating:\n{exception}"
+        )
 
     score_function = MeanAveragePrecisionAtKScore()
     try:
         score_value = score_function(dataset.test, predictions)
         scores[f"MAP@{config['k']}"] = score_value.item()
-        logger.info(f"Successfully evaluate {type(score_function).__name__} score: {score_value:.6f}")
+        logger.info(
+            f"Successfully evaluate {type(score_function).__name__} score: {score_value:.6f}"
+        )
     except Exception as exception:
-        logger.warn(f"Error while {type(score_function).__name__} score evaluating:\n{exception}")
+        logger.warn(
+            f"Error while {type(score_function).__name__} score evaluating:\n{exception}"
+        )
 
     score_function = NDCGScore()
     try:
         score_value = score_function(dataset.test, predictions)
         scores[f"nDCG@{config['k']}"] = score_value.item()
-        logger.info(f"Successfully evaluate {type(score_function).__name__} score: {score_value:.6f}")
+        logger.info(
+            f"Successfully evaluate {type(score_function).__name__} score: {score_value:.6f}"
+        )
     except Exception as exception:
-        logger.warn(f"Error while {type(score_function).__name__} score evaluating:\n{exception}")
+        logger.warn(
+            f"Error while {type(score_function).__name__} score evaluating:\n{exception}"
+        )
 
     to_json(scores, config["test_scores_filepath"])
     return Container(elements=scores)

@@ -1,4 +1,4 @@
-from .datasets import UserItemInteractionsDataset
+from .datasets import UserItemInteractionsDataset, Features
 
 
-__all__ = ["UserItemInteractionsDataset"]
+__all__ = ["Features", "UserItemInteractionsDataset"]

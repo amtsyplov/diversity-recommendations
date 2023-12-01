@@ -10,16 +10,16 @@ from divrec.train import Trainer
 
 class BPRTrainer(Trainer):
     def __init__(
-            self,
-            model: torch.nn.Module,
-            optimizer: torch.optim.Optimizer,
-            score_function: torch.nn.Module,
-            train: BPRSampling,
-            validation: Optional[BPRSampling] = None,
-            train_batch_size: int = 128,
-            validation_batch_size: int = 128,
-            epochs: int = 10,
-            logfile: Optional[str] = None,
+        self,
+        model: torch.nn.Module,
+        optimizer: torch.optim.Optimizer,
+        score_function: torch.nn.Module,
+        train: BPRSampling,
+        validation: Optional[BPRSampling] = None,
+        train_batch_size: int = 128,
+        validation_batch_size: int = 128,
+        epochs: int = 10,
+        logfile: Optional[str] = None,
     ):
         self.train = train
         self.validation = validation

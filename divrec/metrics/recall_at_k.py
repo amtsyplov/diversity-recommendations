@@ -16,10 +16,14 @@ def recall_at_k(interactions: torch.LongTensor, recommendations: torch.LongTenso
     loss_values = torch.zeros(no_users)
     for user_id in range(no_users):
         positives = interactions[interactions[:, 0] == user_id, 1]
-        loss_values[user_id] = torch.isin(recommendations[user_id], positives).sum().item() / positives.size(0)
+        loss_values[user_id] = torch.isin(
+            recommendations[user_id], positives
+        ).sum().item() / positives.size(0)
     return loss_values
 
 
 class RecallAtKScore(RecommendationsAwareLoss):
-    def recommendations_loss(self, interactions: torch.LongTensor, recommendations: torch.LongTensor) -> torch.Tensor:
+    def recommendations_loss(
+        self, interactions: torch.LongTensor, recommendations: torch.LongTensor
+    ) -> torch.Tensor:
         return recall_at_k(interactions, recommendations)

@@ -31,27 +31,39 @@ def movie_lens_load(path: str, train_size: float, test_size: float) -> MovieLens
             v, k = line.split()
             info["no_" + k] = int(v)
 
-    rating = pd.read_csv(os.path.join(path, "u.data"), sep="\t", names=["user_id", "item_id", "rating", "timestamp"])\
-        .sort_values("timestamp", ignore_index=True)
+    rating = pd.read_csv(
+        os.path.join(path, "u.data"),
+        sep="\t",
+        names=["user_id", "item_id", "rating", "timestamp"],
+    ).sort_values("timestamp", ignore_index=True)
 
     # in initial data numerations starts from 1
     rating["item_id"] = rating["item_id"] - 1
     rating["user_id"] = rating["user_id"] - 1
 
-    users, indexes, counts = np.unique(rating["user_id"], return_inverse=True, return_counts=True)
+    users, indexes, counts = np.unique(
+        rating["user_id"], return_inverse=True, return_counts=True
+    )
 
     rating["counts"] = counts[indexes]
     rating["row_number"] = rating.groupby("user_id").cumcount()
     rating["ratio"] = rating["row_number"] / rating["counts"]
 
     rating["sample"] = np.where(
-        rating["ratio"] < train_size, "train",
-        np.where(rating["ratio"] < (1 - test_size), "validation", "test")
+        rating["ratio"] < train_size,
+        "train",
+        np.where(rating["ratio"] < (1 - test_size), "validation", "test"),
     )
 
-    train = rating.loc[rating["sample"] == "train", ["user_id", "item_id", "rating"]].values
-    test = rating.loc[rating["sample"] == "test", ["user_id", "item_id", "rating"]].values
-    validation = rating.loc[rating["sample"] == "validation", ["user_id", "item_id", "rating"]].values
+    train = rating.loc[
+        rating["sample"] == "train", ["user_id", "item_id", "rating"]
+    ].values
+    test = rating.loc[
+        rating["sample"] == "test", ["user_id", "item_id", "rating"]
+    ].values
+    validation = rating.loc[
+        rating["sample"] == "validation", ["user_id", "item_id", "rating"]
+    ].values
 
     return MovieLens100K(
         info["no_users"],
