@@ -17,10 +17,7 @@ from divrec_experiments.utils import to_json
 from divrec_pipelines.pipeline import Container, stage
 
 
-def evaluate_auc_roc(
-    loader: DataLoader,
-    model: MatrixFactorization,
-) -> float:
+def evaluate_auc_roc(loader: DataLoader, model: MatrixFactorization,) -> float:
     score_function = AUCScore()
     score_value = 0.0
     batch_count = 0

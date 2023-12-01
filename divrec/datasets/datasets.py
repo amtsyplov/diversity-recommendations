@@ -56,8 +56,8 @@ class UserItemInteractionsDataset:
             users = torch.unique(self.interactions[:, 0])
             items = torch.unique(self.interactions[:, 1])
 
-            self.number_of_users = users.size(0)
-            self.number_of_items = items.size(0)
+            self.number_of_users = max(self.number_of_users, users.size(0))
+            self.number_of_items = max(self.number_of_items, items.size(0))
 
             assert torch.all(torch.arange(self.number_of_users) == users).item()
             assert torch.all(torch.arange(self.number_of_items) == items).item()
