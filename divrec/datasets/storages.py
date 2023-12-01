@@ -53,6 +53,10 @@ class UserItemInteractionsDataset:
             self.number_of_interactions, no_columns = self.interactions.size()
             assert no_columns == 2
 
+            if self.interaction_scores is None:
+                self.interaction_scores = torch.zeros(self.number_of_interactions)
+            assert self.interaction_scores.size(0) == self.number_of_interactions
+
             users = torch.unique(self.interactions[:, 0])
             items = torch.unique(self.interactions[:, 1])
 
@@ -75,3 +79,24 @@ class UserItemInteractionsDataset:
             if self.number_of_items == 0:
                 self.number_of_items = len(self.item_features)
             assert self.number_of_items == len(self.item_features)
+
+    def has_interactions(self) -> bool:
+        return self.interactions is not None
+
+    def has_user_features(self) -> bool:
+        return self.user_features is not None
+
+    def has_item_features(self) -> bool:
+        return self.item_features is not None
+
+
+def get_user_features(data: UserItemInteractionsDataset, user_id: int) -> Optional[torch.Tensor]:
+    if data.user_features is None:
+        return None
+    return data.user_features.features[user_id]
+
+
+def get_item_features(data: UserItemInteractionsDataset, item_id: int) -> Optional[torch.Tensor]:
+    if data.item_features is None:
+        return None
+    return data.item_features.features[item_id]
