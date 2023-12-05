@@ -6,12 +6,12 @@ from divrec.datasets import UserItemInteractionsDataset
 
 
 class DatasetAwareLoss:
-    def __init__(self, dataset: Optional[UserItemInteractionsDataset] = None):
+    def __init__(self, *args, dataset: Optional[UserItemInteractionsDataset] = None, **kwargs):
         self.dataset = dataset
 
 
 class ScoreWithReduction:
-    def __init__(self, reduce: bool = True, reduction: str = "mean"):
+    def __init__(self, *args, reduce: bool = True, reduction: str = "mean", **kwargs):
         assert reduction in ["none", "mean", "sum"]
         self.reduce = reduce and reduction != "none"
         self.reduction = reduction
