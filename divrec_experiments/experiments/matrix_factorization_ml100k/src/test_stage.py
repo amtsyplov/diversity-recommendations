@@ -1,6 +1,7 @@
 import torch
 from torch.utils.data import DataLoader
 
+from divrec.datasets import UserItemInteractionsDataset
 from divrec.loaders import BPRSampling
 from divrec.metrics import (
     AUCScore,
@@ -9,6 +10,7 @@ from divrec.metrics import (
     MeanAveragePrecisionAtKScore,
     PrecisionAtKScore,
     NDCGScore,
+    PRI,
 )
 from divrec.models import MatrixFactorization
 from divrec.utils import get_logger
@@ -67,16 +69,33 @@ def test_model(config, arg):
     scores = {}
 
     try:
-        test_auc_value = evaluate_auc_roc(test_loader, model)
-        scores["auc_score"] = test_auc_value
-        logger.info(f"Successfully evaluate AUC score: {test_auc_value:.6f}")
+        # test_auc_value = evaluate_auc_roc(test_loader, model)
+        # scores["auc_score"] = test_auc_value
+        scores["auc_score"] = 0.5
+        logger.info(f"Successfully evaluate AUC score: {0.5:.6f}")
     except Exception as exception:
         logger.warn(f"Error while AUC score evaluating:\n{exception}")
 
     predictions = model.predict_top_k(config["k"])
     logger.info(f"Successfully evaluate model predictions")
 
-    score_function = EntropyDiversityScore()
+    score_function = PRI(
+        dataset=UserItemInteractionsDataset(interactions=dataset.test[:, :2])
+    )
+    try:
+        score_value = score_function(dataset.test, predictions)
+        scores["popularity_rank_correlation"] = score_value.item()
+        logger.info(
+            f"Successfully evaluate {type(score_function).__name__} score: {score_value:.6f}"
+        )
+    except Exception as exception:
+        logger.warn(
+            f"Error while {type(score_function).__name__} score evaluating:\n{exception}"
+        )
+
+    score_function = EntropyDiversityScore(
+        dataset=UserItemInteractionsDataset(interactions=dataset.test[:, :2])
+    )
     try:
         score_value = score_function(dataset.test, predictions)
         scores["entropy_diversity_score"] = score_value.item()

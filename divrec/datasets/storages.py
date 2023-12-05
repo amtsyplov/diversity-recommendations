@@ -60,11 +60,11 @@ class UserItemInteractionsDataset:
             users = torch.unique(self.interactions[:, 0])
             items = torch.unique(self.interactions[:, 1])
 
-            self.number_of_users = max(self.number_of_users, users.size(0))
-            self.number_of_items = max(self.number_of_items, items.size(0))
+            self.number_of_users = max(self.number_of_users, users.max() + 1)
+            self.number_of_items = max(self.number_of_items, items.max() + 1)
 
-            assert torch.all(torch.arange(self.number_of_users) == users).item()
-            assert torch.all(torch.arange(self.number_of_items) == items).item()
+            assert torch.all(torch.isin(users, torch.arange(self.number_of_users))).item()
+            assert torch.all(torch.isin(items, torch.arange(self.number_of_items))).item()
 
         if self.interaction_scores is not None:
             assert self.interactions is not None
