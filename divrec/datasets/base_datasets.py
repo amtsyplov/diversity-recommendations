@@ -137,6 +137,8 @@ class RankingDataset(IterableDataset):
     def __iter__(self) -> Iterator[RankingRow]:
         items = frozenset(range(self.data.number_of_items))
         for user_id in range(self.data.number_of_users):
+            positives = self.data.interactions[self.data.interactions[:, 0] == user_id, 1]
+
             if self.frozen is not None:
                 frozen = frozenset(
                     self.frozen.interactions[
@@ -161,7 +163,8 @@ class RankingDataset(IterableDataset):
 
             yield (
                 torch.full((len(negatives),), user_id),
-                negatives,
+                positives,
+                torch.LongTensor(negatives),
                 user_features,
                 item_features,
             )

@@ -15,15 +15,15 @@ def point_wise_score_loop(
 ):
     model.eval()
     loader = dataset.loader(**loader_params)
-    loss_values = {loss.__name__: list() for loss in losses}
+    loss_values = {loss.__class__.__name__: list() for loss in losses}
     for user_id, item_id, user_features, item_features, true_relevance in loader:
         predicted_relevance = model(user_id, item_id, user_features, item_features)
         for loss in losses:
-            loss_values[loss.__name__].append(
+            loss_values[loss.__class__.__name__].append(
                 loss.point_wise(true_relevance, predicted_relevance)
             )
     return [
-        loss.reduce_loss_values(torch.concatenate(loss_values[loss.__name__]))
+        loss.reduce_loss_values(torch.concatenate(loss_values[loss.__class__.__name__]))
         for loss in losses
     ]
 
@@ -36,14 +36,14 @@ def pair_wise_score_loop(
 ):
     model.eval()
     loader = dataset.loader(**loader_params)
-    loss_values = {loss.__name__: list() for loss in losses}
+    loss_values = {loss.__class__.__name__: list() for loss in losses}
     for user_id, pos, neg, user_features, pos_features, neg_features in loader:
         positives = model(user_id, pos, user_features, pos_features)
         negatives = model(user_id, neg, user_features, neg_features)
         for loss in losses:
-            loss_values[loss.__name__].append(loss.pair_wise(positives, negatives))
+            loss_values[loss.__class__.__name__].append(loss.pair_wise(positives, negatives))
     return [
-        loss.reduce_loss_values(torch.concatenate(loss_values[loss.__name__]))
+        loss.reduce_loss_values(torch.concatenate(loss_values[loss.__class__.__name__]))
         for loss in losses
     ]
 

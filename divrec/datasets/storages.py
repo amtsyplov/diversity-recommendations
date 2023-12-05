@@ -16,7 +16,7 @@ class Features:
     number_of_features: int = 0
 
     def __post_init__(self):
-        self.number_of_features = self.features.size(0)
+        self.number_of_features = max(self.number_of_features, self.features.size(1))
         assert len(self.feature_names) == self.number_of_features
 
     def __len__(self):
