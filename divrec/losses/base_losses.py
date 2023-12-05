@@ -6,7 +6,9 @@ from divrec.datasets import UserItemInteractionsDataset
 
 
 class DatasetAwareLoss:
-    def __init__(self, *args, dataset: Optional[UserItemInteractionsDataset] = None, **kwargs):
+    def __init__(
+        self, *args, dataset: Optional[UserItemInteractionsDataset] = None, **kwargs
+    ):
         self.dataset = dataset
 
 

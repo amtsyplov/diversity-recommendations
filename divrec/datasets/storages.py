@@ -90,13 +90,17 @@ class UserItemInteractionsDataset:
         return self.item_features is not None
 
 
-def get_user_features(data: UserItemInteractionsDataset, user_id: int) -> Optional[torch.Tensor]:
+def get_user_features(
+    data: UserItemInteractionsDataset, user_id: int
+) -> Optional[torch.Tensor]:
     if data.user_features is None:
         return None
     return data.user_features.features[user_id]
 
 
-def get_item_features(data: UserItemInteractionsDataset, item_id: int) -> Optional[torch.Tensor]:
+def get_item_features(
+    data: UserItemInteractionsDataset, item_id: int
+) -> Optional[torch.Tensor]:
     if data.item_features is None:
         return None
     return data.item_features.features[item_id]

@@ -10,6 +10,7 @@ from .normalized_discounted_cumulative_gain import (
     NDCGScore,
     normalized_discounted_cumulative_gain,
 )
+from .popularity_rank_correlation_for_items import avg_rank, rank, PRI
 from .precision_at_k import HitRateScore, PrecisionAtKScore, precision_at_k
 from .recall_at_k import RecallAtKScore, recall_at_k
 
@@ -22,6 +23,9 @@ __all__ = [
     "IntraListDiversityScore",
     "MeanAveragePrecisionAtKScore",
     "NDCGScore",
+    "avg_rank",
+    "rank",
+    "PRI",
     "PrecisionAtKScore",
     "RecallAtKScore",
     "average_precision_at_k",

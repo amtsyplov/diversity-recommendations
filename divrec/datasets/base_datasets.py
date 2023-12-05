@@ -4,7 +4,11 @@ from typing import Iterator, Optional, Tuple
 import torch
 from torch.utils.data import Dataset, IterableDataset, DataLoader
 
-from divrec.datasets.storages import UserItemInteractionsDataset, get_item_features, get_user_features
+from divrec.datasets.storages import (
+    UserItemInteractionsDataset,
+    get_item_features,
+    get_user_features,
+)
 
 
 PointWiseRow = Tuple[
@@ -12,7 +16,7 @@ PointWiseRow = Tuple[
     int,  # item_id
     Optional[torch.Tensor],  # user features
     Optional[torch.Tensor],  # item features
-    float  # interactions score
+    float,  # interactions score
 ]
 
 
@@ -55,10 +59,10 @@ class PointWiseDataset(Dataset):
 
 class PairWiseDataset(IterableDataset):
     def __init__(
-            self,
-            data: UserItemInteractionsDataset,
-            frozen: Optional[UserItemInteractionsDataset] = None,
-            max_sampled: int = 100
+        self,
+        data: UserItemInteractionsDataset,
+        frozen: Optional[UserItemInteractionsDataset] = None,
+        max_sampled: int = 100,
     ):
         self.data = data
         self.frozen = frozen
@@ -68,10 +72,18 @@ class PairWiseDataset(IterableDataset):
         items = frozenset(range(self.data.number_of_items))
         for user_id in range(self.data.number_of_users):
             user_features = get_user_features(self.data, user_id)
-            positives = frozenset(self.data.interactions[self.data.interactions[:, 0] == user_id, 1].tolist())
+            positives = frozenset(
+                self.data.interactions[
+                    self.data.interactions[:, 0] == user_id, 1
+                ].tolist()
+            )
 
             if self.frozen is not None:
-                frozen = frozenset(self.frozen.interactions[self.frozen.interactions[:, 0] == user_id, 1].tolist())
+                frozen = frozenset(
+                    self.frozen.interactions[
+                        self.frozen.interactions[:, 0] == user_id, 1
+                    ].tolist()
+                )
                 negatives = items - positives - frozen
             else:
                 negatives = items - positives
@@ -83,7 +95,9 @@ class PairWiseDataset(IterableDataset):
             for positive_item_id in positives:
                 positive_item_features = get_item_features(self.data, positive_item_id)
                 for negative_item_id in negatives:
-                    negative_item_features = get_item_features(self.data, negative_item_id)
+                    negative_item_features = get_item_features(
+                        self.data, negative_item_id
+                    )
                     yield (
                         user_id,
                         positive_item_id,
@@ -111,6 +125,7 @@ class RankingDataset(IterableDataset):
 
     While building negatives remove only frozen interactions.
     """
+
     def __init__(
         self,
         data: UserItemInteractionsDataset,
@@ -123,22 +138,30 @@ class RankingDataset(IterableDataset):
         items = frozenset(range(self.data.number_of_items))
         for user_id in range(self.data.number_of_users):
             if self.frozen is not None:
-                frozen = frozenset(self.frozen.interactions[self.frozen.interactions[:, 0] == user_id, 1].tolist())
+                frozen = frozenset(
+                    self.frozen.interactions[
+                        self.frozen.interactions[:, 0] == user_id, 1
+                    ].tolist()
+                )
                 negatives = list(items - frozen)
             else:
                 negatives = items
 
             user_features = None
             if self.data.has_user_features():
-                user_features = torch.concatenate([self.data.user_features.features for _ in negatives])
+                user_features = torch.concatenate(
+                    [self.data.user_features.features for _ in negatives]
+                )
 
             item_features = None
             if self.data.has_user_features():
-                item_features = torch.concatenate([get_item_features(self.data, item_id) for item_id in negatives])
+                item_features = torch.concatenate(
+                    [get_item_features(self.data, item_id) for item_id in negatives]
+                )
 
             yield (
                 torch.full((len(negatives),), user_id),
                 negatives,
                 user_features,
-                item_features
+                item_features,
             )

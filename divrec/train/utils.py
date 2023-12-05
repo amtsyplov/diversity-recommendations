@@ -19,8 +19,13 @@ def point_wise_score_loop(
     for user_id, item_id, user_features, item_features, true_relevance in loader:
         predicted_relevance = model(user_id, item_id, user_features, item_features)
         for loss in losses:
-            loss_values[loss.__name__].append(loss.point_wise(true_relevance, predicted_relevance))
-    return [loss.reduce_loss_values(torch.concatenate(loss_values[loss.__name__])) for loss in losses]
+            loss_values[loss.__name__].append(
+                loss.point_wise(true_relevance, predicted_relevance)
+            )
+    return [
+        loss.reduce_loss_values(torch.concatenate(loss_values[loss.__name__]))
+        for loss in losses
+    ]
 
 
 def pair_wise_score_loop(
@@ -37,7 +42,10 @@ def pair_wise_score_loop(
         negatives = model(user_id, neg, user_features, neg_features)
         for loss in losses:
             loss_values[loss.__name__].append(loss.pair_wise(positives, negatives))
-    return [loss.reduce_loss_values(torch.concatenate(loss_values[loss.__name__])) for loss in losses]
+    return [
+        loss.reduce_loss_values(torch.concatenate(loss_values[loss.__name__]))
+        for loss in losses
+    ]
 
 
 def get_model_recommendations(
@@ -46,9 +54,24 @@ def get_model_recommendations(
     number_of_recommendations: int,
 ) -> torch.LongTensor:
     recommendations = []
-    for repeated_user_id, positive_item_id, negative_item_id, repeated_user_features, negative_item_features in dataset:
-        model_scores = model(repeated_user_id, negative_item_id, repeated_user_features, negative_item_features)
-        recommendations.append(negative_item_id[torch.argsort(model_scores)][:number_of_recommendations].tolist())
+    for (
+        repeated_user_id,
+        positive_item_id,
+        negative_item_id,
+        repeated_user_features,
+        negative_item_features,
+    ) in dataset:
+        model_scores = model(
+            repeated_user_id,
+            negative_item_id,
+            repeated_user_features,
+            negative_item_features,
+        )
+        recommendations.append(
+            negative_item_id[torch.argsort(model_scores)][
+                :number_of_recommendations
+            ].tolist()
+        )
     return torch.LongTensor(recommendations)
 
 
@@ -60,7 +83,9 @@ def recommendations_score_loop(
 ):
     model.eval()
     interactions = dataset.data.interactions
-    recommendations = get_model_recommendations(dataset, model, number_of_recommendations)
+    recommendations = get_model_recommendations(
+        dataset, model, number_of_recommendations
+    )
     return [loss(interactions, recommendations) for loss in losses]
 
 
@@ -94,7 +119,9 @@ def point_wise_train_loop(
             for i, score in enumerate(scores):
                 mean_scores[i] += score(true_relevance, predicted_relevance).item()
 
-    return mean_loss / batch_count, [mean_score / batch_count for mean_score in mean_scores]
+    return mean_loss / batch_count, [
+        mean_score / batch_count for mean_score in mean_scores
+    ]
 
 
 def pair_wise_train_loop(
@@ -128,7 +155,9 @@ def pair_wise_train_loop(
             for i, score in enumerate(scores):
                 mean_scores[i] += score(positives, negatives).item()
 
-    return mean_loss / batch_count, [mean_score / batch_count for mean_score in mean_scores]
+    return mean_loss / batch_count, [
+        mean_score / batch_count for mean_score in mean_scores
+    ]
 
 
 def recommendations_train_loop(
@@ -144,10 +173,25 @@ def recommendations_train_loop(
     batch_count = 0
     mean_loss = 0.0
     mean_scores = [0.0 for _ in range(len(scores))] if scores is not None else list()
-    for repeated_user_id, positive_item_id, negative_item_id, repeated_user_features, negative_item_features in dataset:
-        model_scores = model(repeated_user_id, negative_item_id, repeated_user_features, negative_item_features)
-        interactions = dataset.data.interactions[dataset.data.interactions[:, 0] == repeated_user_id[0]]
-        recommendations = negative_item_id[torch.argsort(model_scores)][:number_of_recommendations]
+    for (
+        repeated_user_id,
+        positive_item_id,
+        negative_item_id,
+        repeated_user_features,
+        negative_item_features,
+    ) in dataset:
+        model_scores = model(
+            repeated_user_id,
+            negative_item_id,
+            repeated_user_features,
+            negative_item_features,
+        )
+        interactions = dataset.data.interactions[
+            dataset.data.interactions[:, 0] == repeated_user_id[0]
+        ]
+        recommendations = negative_item_id[torch.argsort(model_scores)][
+            :number_of_recommendations
+        ]
 
         loss_value = loss(interactions, recommendations)
         loss_value.backward()
@@ -162,4 +206,6 @@ def recommendations_train_loop(
             for i, score in enumerate(scores):
                 mean_scores[i] += score(interactions, recommendations).item()
 
-    return mean_loss / batch_count, [mean_score / batch_count for mean_score in mean_scores]
+    return mean_loss / batch_count, [
+        mean_score / batch_count for mean_score in mean_scores
+    ]
