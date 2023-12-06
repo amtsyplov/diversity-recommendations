@@ -1,4 +1,0 @@
-data_directory: /Users/alexey.tsyplov/Projects/diversity-recommendations/divrec_experiments/data/ml-100k
-logfile: /Users/alexey.tsyplov/Projects/diversity-recommendations/divrec_experiments/experiments/random_model/main.log
-device: cpu
-k: 10

@@ -166,7 +166,5 @@ cython_debug/
 **/.DS_Store
 **/._.DS_Store
 
-divrec_experiments/data/
-divrec_experiments/.mlruns
-
-**/workdir/
+experiments/data/
+experiments/.mlruns
