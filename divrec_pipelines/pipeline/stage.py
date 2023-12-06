@@ -55,4 +55,5 @@ def stage(configuration: Dict[str, Any]):
                 return function(config, arg)
 
         return Wrapper(configuration)
+
     return decorator

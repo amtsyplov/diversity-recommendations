@@ -159,8 +159,14 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 .idea/
 
-divrec_experiments/data/
-
+# .DS_Store files
+.DS_Store
+._.DS_Store
+*/.DS_Store
 **/.DS_Store
+**/._.DS_Store
+
+divrec_experiments/data/
+divrec_experiments/.mlruns
 
 **/workdir/

@@ -12,7 +12,7 @@ stages:
     validation_batch_size: 100
     embedding_dim: 100
     lr: 0.001
-    epochs: 64
+    epochs: 2
     model_path: /Users/alexey.tsyplov/Projects/diversity-recommendations/divrec_experiments/experiments/matrix_factorization_ml100k/workdir/model.pth
     logfile: /Users/alexey.tsyplov/Projects/diversity-recommendations/divrec_experiments/experiments/matrix_factorization_ml100k/workdir/pipeline.log
     train_scores_filepath: /Users/alexey.tsyplov/Projects/diversity-recommendations/divrec_experiments/experiments/matrix_factorization_ml100k/workdir/train_scores.json

@@ -1,63 +1,107 @@
 import os
 from dataclasses import dataclass
 
-import numpy as np
 import pandas as pd
 import torch
+
+from divrec.utils import get_logger
+from divrec.datasets import UserItemInteractionsDataset, Features
 
 
 @dataclass
 class MovieLens100K:
-    no_users: int
-    no_items: int
-    no_ratings: int
-    train: torch.LongTensor
-    test: torch.LongTensor
-    validation: torch.LongTensor
+    train: UserItemInteractionsDataset
+    test: UserItemInteractionsDataset
 
 
-def movie_lens_load(path: str, train_size: float, test_size: float) -> MovieLens100K:
-    """
-    Loads MovieLens100K dataset, split it to train, validation and test
-    in time order and return tuple of 3 tensors in form
+def load_data(path: str, filename: str) -> UserItemInteractionsDataset:
+    logger = get_logger(__name__)
 
-    [user_id, item_id, score]
-
-    Stratified by user_id.
-    """
     info = {}
     with open(os.path.join(path, "u.info"), mode="r") as file:
         for line in file.readlines():
             v, k = line.split()
             info["no_" + k] = int(v)
 
-    rating = pd.read_csv(os.path.join(path, "u.data"), sep="\t", names=["user_id", "item_id", "rating", "timestamp"])\
-        .sort_values("timestamp", ignore_index=True)
-
-    # in initial data numerations starts from 1
-    rating["item_id"] = rating["item_id"] - 1
+    rating = pd.read_csv(
+        os.path.join(path, filename),
+        sep="\t",
+        names=["user_id", "item_id", "rating", "timestamp"],
+    ).sort_values("timestamp", ignore_index=True)
     rating["user_id"] = rating["user_id"] - 1
+    rating["item_id"] = rating["item_id"] - 1
+    logger.info(f'user max {rating["user_id"].unique().max() + 1}')
+    logger.info(f'item max {rating["item_id"].unique().max() + 1}')
 
-    users, indexes, counts = np.unique(rating["user_id"], return_inverse=True, return_counts=True)
-
-    rating["counts"] = counts[indexes]
-    rating["row_number"] = rating.groupby("user_id").cumcount()
-    rating["ratio"] = rating["row_number"] / rating["counts"]
-
-    rating["sample"] = np.where(
-        rating["ratio"] < train_size, "train",
-        np.where(rating["ratio"] < (1 - test_size), "validation", "test")
+    user_features = pd.read_csv(
+        os.path.join(path, "u.user"),
+        sep="|",
+        names=["user_id", "age", "gender", "occupation", "zip_code"]
+    )
+    user_features.drop(
+        columns=[
+            "user_id",
+            "gender",
+            "occupation",
+            "zip_code",
+        ],
+        inplace=True,
     )
 
-    train = rating.loc[rating["sample"] == "train", ["user_id", "item_id", "rating"]].values
-    test = rating.loc[rating["sample"] == "test", ["user_id", "item_id", "rating"]].values
-    validation = rating.loc[rating["sample"] == "validation", ["user_id", "item_id", "rating"]].values
+    item_features = pd.read_csv(
+        os.path.join(path, "u.item"),
+        encoding='latin-1',
+        sep="|",
+        names=[
+            "movie_id",
+            "movie_title",
+            "release_date",
+            "video_release_date",
+            "IMDb_URL",
+            "unknown",
+            "Action",
+            "Adventure",
+            "Animation",
+            "Children's",
+            "Comedy",
+            "Crime",
+            "Documentary",
+            "Drama",
+            "Fantasy",
+            "Film-Noir",
+            "Horror",
+            "Musical",
+            "Mystery",
+            "Romance",
+            "Sci-Fi",
+            "Thriller",
+            "War",
+            "Western",
+        ]
+    )
+    item_features.drop(
+        columns=[
+            "movie_id",
+            "movie_title",
+            "release_date",
+            "video_release_date",
+            "IMDb_URL",
+        ],
+        inplace=True,
+    )
 
+    return UserItemInteractionsDataset(
+        interactions=torch.LongTensor(rating[["user_id", "item_id"]].values),
+        interaction_scores=torch.Tensor(rating["rating"].values),
+        item_features=Features(torch.Tensor(item_features.values.tolist()), item_features.columns),
+        user_features=Features(torch.Tensor(user_features.values.tolist()), user_features.columns),
+        number_of_items=info["no_items"],
+        number_of_users=info["no_users"],
+    )
+
+
+def movie_lens_load(path: str) -> MovieLens100K:
     return MovieLens100K(
-        info["no_users"],
-        info["no_items"],
-        info["no_ratings"],
-        torch.LongTensor(train),
-        torch.LongTensor(test),
-        torch.LongTensor(validation),
+        load_data(path, "ua.base"),
+        load_data(path, "ua.test"),
     )

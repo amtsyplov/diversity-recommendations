@@ -1,7 +1,21 @@
-from .bpr_sampling import BPRSampling
-from .wmrb_sampling import WMRBSampling
+from .base_datasets import (
+    PairWiseRow,
+    PairWiseDataset,
+    PointWiseRow,
+    PointWiseDataset,
+    RankingRow,
+    RankingDataset,
+)
+from .storages import UserItemInteractionsDataset, Features
+
 
 __all__ = [
-    "BPRSampling",
-    "WMRBSampling",
+    "Features",
+    "UserItemInteractionsDataset",
+    "PairWiseRow",
+    "PairWiseDataset",
+    "PointWiseRow",
+    "PointWiseDataset",
+    "RankingDataset",
+    "RankingRow",
 ]

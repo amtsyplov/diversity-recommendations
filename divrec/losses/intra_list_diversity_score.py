@@ -1,25 +1,32 @@
-from typing import Optional
 from itertools import combinations
-from divrec.utils import ScoreWithReduction
+
 import torch
 
+from divrec.losses.base_losses import RecommendationsAwareLoss, DatasetAwareLoss
 
-class IntraListDiversityScore(ScoreWithReduction):
+
+class IntraListDiversityScore(RecommendationsAwareLoss):
     """
     Diversity metric written in
-    
+
     Incorporating Diversity in a Learning to Rank Recommender System
-    by JacekWasilewski and Neil Hurley
+    by Jacek Wasilewski and Neil Hurley
     """
-    def __init__(self, *args, distance_matrix: Optional[torch.Tensor] = None, **kwargs):
-        ScoreWithReduction.__init__(self, *args, **kwargs)
+
+    def __init__(self, *args, distance_matrix: torch.Tensor, **kwargs):
+        RecommendationsAwareLoss.__init__(self, *args, **kwargs)
         self.distance_matrix = distance_matrix
 
-    def forward(self, recommendations: torch.Tensor):
+    def recommendations_loss(
+        self, interactions: torch.LongTensor, recommendations: torch.LongTensor
+    ) -> torch.Tensor:
         no_user_recommendations = recommendations.size(1)
 
         loss_values = torch.Tensor(
-            [self.user_ild(user_recommendations, self.distance_matrix) for user_recommendations in recommendations]
+            [
+                self.user_ild(user_recommendations, self.distance_matrix)
+                for user_recommendations in recommendations
+            ]
         )
 
         loss_values /= no_user_recommendations * (no_user_recommendations - 1)
@@ -27,16 +34,30 @@ class IntraListDiversityScore(ScoreWithReduction):
         return self.reduce_loss_values(loss_values)
 
     @staticmethod
-    def user_ild(user_recommendations: torch.Tensor, distance_matrix: torch.Tensor) -> float:
-        return sum(distance_matrix[i, j] for i, j in combinations(user_recommendations, 2))
+    def user_ild(
+        user_recommendations: torch.Tensor, distance_matrix: torch.Tensor
+    ) -> float:
+        return sum(
+            distance_matrix[i, j] for i, j in combinations(user_recommendations, 2)
+        )
 
 
-class IntraListBinaryUnfairnessScore(IntraListDiversityScore):
+class IntraListBinaryUnfairnessScore(IntraListDiversityScore, DatasetAwareLoss):
     """
 
     Controlling Popularity Bias in Learning to Rank Recommendation
     by Himan Abdollahpouri, Robin Burke and others
     """
-    def __init__(self, *args, item_labels: torch.LongTensor, **kwargs):
-        distance_matrix = (item_labels.unsqueeze(0) == item_labels.unsqueeze(1)).type(torch.IntTensor)
-        IntraListDiversityScore.__init__(self, *args, distance_matrix=distance_matrix, **kwargs)
+
+    def __init__(self, *args, items_partition_feature: str = "partition", **kwargs):
+        DatasetAwareLoss.__init__(self, *args, **kwargs)
+        self.items_partition_feature = items_partition_feature
+
+        IntraListDiversityScore.__init__(
+            self, *args, distance_matrix=self.get_distance_matrix(), **kwargs
+        )
+
+    def get_distance_matrix(self):
+        assert self.items_partition_feature in self.dataset.item_features
+        item_labels = self.dataset.item_features[self.items_partition_feature]
+        return (item_labels.unsqueeze(0) == item_labels.unsqueeze(1)).int()

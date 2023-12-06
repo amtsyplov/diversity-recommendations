@@ -1,12 +1,14 @@
 import torch
-from divrec.utils import ScoreWithReduction
+
+from divrec.losses.base_losses import PairWiseLoss
 
 
-class LogSigmoidDifferenceLoss(ScoreWithReduction):
+class LogSigmoidDifferenceLoss(PairWiseLoss):
     def __init__(self, *args, **kwargs):
-        ScoreWithReduction.__init__(self, *args, *kwargs)
+        PairWiseLoss.__init__(self, *args, *kwargs)
         self.log_sigmoid = torch.nn.LogSigmoid()
 
-    def forward(self, x, y):
-        loss_values = self.log_sigmoid(x - y)
-        return self.reduce_loss_values(loss_values)
+    def pair_wise(
+        self, positives: torch.Tensor, negatives: torch.Tensor
+    ) -> torch.Tensor:
+        return -self.log_sigmoid(positives - negatives)

@@ -9,15 +9,15 @@ from divrec.utils import get_logger
 
 class Trainer(metaclass=ABCMeta):
     def __init__(
-            self,
-            model: torch.nn.Module,
-            optimizer: torch.optim.Optimizer,
-            loss_function: torch.nn.Module,
-            score_function: torch.nn.Module,
-            train_loader: DataLoader,
-            validation_loader: Optional[DataLoader] = None,
-            epochs: int = 10,
-            logfile: Optional[str] = None,
+        self,
+        model: torch.nn.Module,
+        optimizer: torch.optim.Optimizer,
+        loss_function: torch.nn.Module,
+        score_function: torch.nn.Module,
+        train_loader: DataLoader,
+        validation_loader: Optional[DataLoader] = None,
+        epochs: int = 10,
+        logfile: Optional[str] = None,
     ):
         self.model = model
         self.optimizer = optimizer
@@ -38,13 +38,18 @@ class Trainer(metaclass=ABCMeta):
             batch_avg_loss, batch_avg_score = self.fit_partial()
             train_losses.append(batch_avg_loss)
             train_scores.append(batch_avg_score)
-            self.logger.info("Train " + self.epoch_message(epoch, batch_avg_loss, batch_avg_score))
+            self.logger.info(
+                "Train " + self.epoch_message(epoch, batch_avg_loss, batch_avg_score)
+            )
 
             if self.validation_loader is not None:
                 batch_avg_loss, batch_avg_score = self.fit_partial(validation_mode=True)
                 validation_losses.append(batch_avg_loss)
                 validation_scores.append(batch_avg_score)
-                self.logger.info("Validation " + self.epoch_message(epoch, batch_avg_loss, batch_avg_score))
+                self.logger.info(
+                    "Validation "
+                    + self.epoch_message(epoch, batch_avg_loss, batch_avg_score)
+                )
 
         self.logger.info("Finish training")
         return train_losses, train_scores, validation_losses, validation_scores

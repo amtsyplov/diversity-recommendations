@@ -1,9 +1,11 @@
 import torch
 
-from divrec.utils import ScoreWithReduction
+from divrec.losses.base_losses import RecommendationsAwareLoss
 
 
-def average_precision_at_k(interactions: torch.LongTensor, recommendations: torch.LongTensor):
+def average_precision_at_k(
+    interactions: torch.LongTensor, recommendations: torch.LongTensor
+):
     """
 
     :param interactions: torch.LongTensor with two columns [user_id, item_id],
@@ -22,11 +24,15 @@ def average_precision_at_k(interactions: torch.LongTensor, recommendations: torc
     return loss_values / k
 
 
-class AveragePrecisionAtKScore(ScoreWithReduction):
-    def forward(self, interactions: torch.LongTensor, recommendations: torch.LongTensor):
-        return self.reduce_loss_values(average_precision_at_k(interactions, recommendations))
+class AveragePrecisionAtKScore(RecommendationsAwareLoss):
+    def recommendations_loss(
+        self, interactions: torch.LongTensor, recommendations: torch.LongTensor
+    ) -> torch.Tensor:
+        return average_precision_at_k(interactions, recommendations)
 
 
-class MeanAveragePrecisionAtKScore(torch.nn.Module):
-    def forward(self, interactions: torch.LongTensor, recommendations: torch.LongTensor):
+class MeanAveragePrecisionAtKScore(AveragePrecisionAtKScore):
+    def forward(
+        self, interactions: torch.LongTensor, recommendations: torch.LongTensor
+    ):
         return torch.mean(average_precision_at_k(interactions, recommendations))

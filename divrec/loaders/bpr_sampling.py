@@ -7,10 +7,10 @@ from torch.utils.data import IterableDataset
 
 class BPRSampling(IterableDataset):
     def __init__(
-            self,
-            user_item_interactions: torch.LongTensor,
-            user_item_interactions_frozen: Optional[torch.LongTensor] = None,
-            max_sampled: int = 20,
+        self,
+        user_item_interactions: torch.LongTensor,
+        user_item_interactions_frozen: Optional[torch.LongTensor] = None,
+        max_sampled: int = 20,
     ):
         """
 
@@ -35,7 +35,9 @@ class BPRSampling(IterableDataset):
             negatives = self.items - positives
 
             if self.frozen_interactions is not None:
-                frozen = frozenset(self.frozen_interactions[self.frozen_interactions[:, 0] == user, 1])
+                frozen = frozenset(
+                    self.frozen_interactions[self.frozen_interactions[:, 0] == user, 1]
+                )
                 negatives -= frozen
 
             if self.max_sampled > 0:

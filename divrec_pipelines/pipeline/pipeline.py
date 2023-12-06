@@ -20,7 +20,9 @@ class Pipeline:
                 config: Dict[str, Any] = yaml.safe_load(file)
 
             if "logfile" in config["meta"]:
-                logger = get_logger(self.__class__.__name__, filepath=config["meta"]["logfile"])
+                logger = get_logger(
+                    self.__class__.__name__, filepath=config["meta"]["logfile"]
+                )
             else:
                 logger = get_logger(self.__class__.__name__)
 

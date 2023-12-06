@@ -3,23 +3,23 @@ from typing import Optional
 import torch
 from torch.utils.data import DataLoader
 
-from divrec.datasets import BPRSampling
+from divrec.loaders import BPRSampling
 from divrec.losses import LogSigmoidDifferenceLoss
 from divrec.train import Trainer
 
 
 class BPRTrainer(Trainer):
     def __init__(
-            self,
-            model: torch.nn.Module,
-            optimizer: torch.optim.Optimizer,
-            score_function: torch.nn.Module,
-            train: BPRSampling,
-            validation: Optional[BPRSampling] = None,
-            train_batch_size: int = 128,
-            validation_batch_size: int = 128,
-            epochs: int = 10,
-            logfile: Optional[str] = None,
+        self,
+        model: torch.nn.Module,
+        optimizer: torch.optim.Optimizer,
+        score_function: torch.nn.Module,
+        train: BPRSampling,
+        validation: Optional[BPRSampling] = None,
+        train_batch_size: int = 128,
+        validation_batch_size: int = 128,
+        epochs: int = 10,
+        logfile: Optional[str] = None,
     ):
         self.train = train
         self.validation = validation
@@ -52,7 +52,7 @@ class BPRTrainer(Trainer):
             positive_predictions = self.model(user, positive)
             negative_predictions = self.model(user, negative)
 
-            loss = -self.loss_function(positive_predictions, negative_predictions)
+            loss = self.loss_function(positive_predictions, negative_predictions)
             score = self.score_function(positive_predictions, negative_predictions)
 
             if not validation_mode:
