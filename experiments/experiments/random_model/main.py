@@ -46,7 +46,10 @@ def main(config_path: str) -> None:
     )
 
     auc_score = pair_wise_score_loop(
-        pair_wise_test_dataset, model, [AUCScore()], batch_size=200,
+        pair_wise_test_dataset,
+        model,
+        [AUCScore()],
+        batch_size=200,
     )
     logger.info(f"Successfully evaluate AUC on test: {auc_score[0].item()}")
     mlflow.log_metric("auc_score", auc_score[0].item())

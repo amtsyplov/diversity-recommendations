@@ -4,7 +4,6 @@ from dataclasses import dataclass
 import pandas as pd
 import torch
 
-from divrec.utils import get_logger
 from divrec.datasets import UserItemInteractionsDataset, Features
 
 
@@ -15,8 +14,6 @@ class MovieLens100K:
 
 
 def load_data(path: str, filename: str) -> UserItemInteractionsDataset:
-    logger = get_logger(__name__)
-
     info = {}
     with open(os.path.join(path, "u.info"), mode="r") as file:
         for line in file.readlines():
@@ -30,8 +27,6 @@ def load_data(path: str, filename: str) -> UserItemInteractionsDataset:
     ).sort_values("timestamp", ignore_index=True)
     rating["user_id"] = rating["user_id"] - 1
     rating["item_id"] = rating["item_id"] - 1
-    logger.info(f'user max {rating["user_id"].unique().max() + 1}')
-    logger.info(f'item max {rating["item_id"].unique().max() + 1}')
 
     user_features = pd.read_csv(
         os.path.join(path, "u.user"),
@@ -39,7 +34,8 @@ def load_data(path: str, filename: str) -> UserItemInteractionsDataset:
         names=["user_id", "age", "gender", "occupation", "zip_code"],
     )
     user_features.drop(
-        columns=["user_id", "gender", "occupation", "zip_code",], inplace=True,
+        columns=["user_id", "gender", "occupation", "zip_code"],
+        inplace=True,
     )
 
     item_features = pd.read_csv(
@@ -99,4 +95,7 @@ def load_data(path: str, filename: str) -> UserItemInteractionsDataset:
 
 
 def movie_lens_load(path: str) -> MovieLens100K:
-    return MovieLens100K(load_data(path, "ua.base"), load_data(path, "ua.test"),)
+    return MovieLens100K(
+        load_data(path, "ua.base"),
+        load_data(path, "ua.test"),
+    )

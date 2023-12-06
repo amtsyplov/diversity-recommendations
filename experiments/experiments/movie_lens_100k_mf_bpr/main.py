@@ -87,7 +87,10 @@ def main(config_path: str) -> None:
     config = load_yaml(config_path)
     workdir = config["workdir"] if "workdir" in config else os.path.abspath("workdir")
     create_if_not_exist(workdir)
-    logger = get_logger(config["mlflow_experiment_name"], filepath=os.path.join(workdir, config["logfile"]))
+    logger = get_logger(
+        config["mlflow_experiment_name"],
+        filepath=os.path.join(workdir, config["logfile"]),
+    )
     mlflow.set_tracking_uri(config["mlflow_tracking_uri"])
     mlflow.set_experiment(config["mlflow_experiment_name"])
     mlflow.log_artifact(config_path)
@@ -155,7 +158,10 @@ def main(config_path: str) -> None:
     )
 
     scores = pair_wise_score_loop(
-        test_pairwise_dataset, model, [AUCScore()], **config["test_pairwise_loader"],
+        test_pairwise_dataset,
+        model,
+        [AUCScore()],
+        **config["test_pairwise_loader"],
     )
     logger.info(f"test AUC: {scores[0].item()}")
     mlflow.log_metric("auc_score", scores[0].item())
@@ -170,7 +176,10 @@ def main(config_path: str) -> None:
     ]
 
     loss_values = recommendations_score_loop(
-        test_ranking_dataset, model, losses, number_of_recommendations=config["k"],
+        test_ranking_dataset,
+        model,
+        losses,
+        number_of_recommendations=config["k"],
     )
 
     for loss, value in zip(losses, loss_values):
