@@ -26,7 +26,6 @@ if __name__ == "__main__":
             "divrec.utils",
             "divrec.losses",
             "divrec.models",
-            "divrec.loaders",
             "divrec.metrics",
             "divrec.datasets",
         ],
