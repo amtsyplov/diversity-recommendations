@@ -1,3 +1,4 @@
+import os
 import json
 import logging
 from typing import Any, Dict, Optional
@@ -16,6 +17,11 @@ def to_json(data, filepath):
 def load_yaml(filepath: str) -> Dict[str, Any]:
     with open(filepath, mode="r") as file:
         return yaml.safe_load(file)
+
+
+def create_if_not_exist(filepath: str) -> None:
+    if not os.path.exists(filepath):
+        os.mkdir(filepath)
 
 
 def get_file_handler(filepath: str):

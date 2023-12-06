@@ -97,7 +97,7 @@ def point_wise_train_loop(
     scores: Optional[List[PointWiseLoss]] = None,
     **loader_params,
 ) -> Tuple[float, List[float]]:
-    assert all(score.reduce for score in scores)
+    assert scores is None or all(score.reduce for score in scores)
     model.train()
     loader = dataset.loader(**loader_params)
     batch_count = 0
@@ -133,7 +133,7 @@ def pair_wise_train_loop(
     scores: Optional[List[PairWiseLoss]] = None,
     **loader_params,
 ) -> Tuple[float, List[float]]:
-    assert all(score.reduce for score in scores)
+    assert scores is None or all(score.reduce for score in scores)
     model.train()
     loader = dataset.loader(**loader_params)
     batch_count = 0
@@ -170,7 +170,7 @@ def recommendations_train_loop(
     optimizer: torch.optim.Optimizer,
     scores: Optional[List[RecommendationsAwareLoss]] = None,
 ) -> Tuple[float, List[float]]:
-    assert all(score.reduce for score in scores)
+    assert scores is None or all(score.reduce for score in scores)
     model.train()
     batch_count = 0
     mean_loss = 0.0

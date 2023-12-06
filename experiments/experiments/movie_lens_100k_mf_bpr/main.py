@@ -1,5 +1,6 @@
 from typing import Tuple
 
+import os
 import click
 import mlflow
 import torch
@@ -27,7 +28,7 @@ from divrec.train import (
     recommendations_score_loop,
 )
 from divrec_experiments.datasets import movie_lens_load
-from divrec_experiments.utils import load_yaml, get_logger
+from divrec_experiments.utils import load_yaml, get_logger, create_if_not_exist
 
 
 def train_validation_split(
@@ -84,9 +85,11 @@ def train_validation_split(
 def main(config_path: str) -> None:
     # --- instantiate config, logger and mlflow client ---
     config = load_yaml(config_path)
-    logger = get_logger(config["logfile"])
-    mlflow.set_tracking_uri("mlflow_tracking_uri")
-    mlflow.set_experiment("mlflow_experiment_name")
+    workdir = config["workdir"] if "workdir" in config else os.path.abspath("workdir")
+    create_if_not_exist(workdir)
+    logger = get_logger(config["mlflow_experiment_name"], filepath=os.path.join(workdir, config["logfile"]))
+    mlflow.set_tracking_uri(config["mlflow_tracking_uri"])
+    mlflow.set_experiment(config["mlflow_experiment_name"])
     mlflow.log_artifact(config_path)
 
     # --- load and preprocess dataset ---
@@ -126,7 +129,7 @@ def main(config_path: str) -> None:
         validation, frozen=train, max_sampled=config["validation_max_sampled"]
     )
     epochs = config["epochs"]
-    for epoch in config["epochs"]:
+    for epoch in range(config["epochs"]):
         mse, _ = point_wise_train_loop(
             train_dataset, model, loss_functions, optimizer, **config["train_loader"]
         )
@@ -142,7 +145,7 @@ def main(config_path: str) -> None:
     logger.info("Successfully finished model train")
 
     # --- model saving ---
-    torch.save(model.state_dict(), config["model_path"])
+    torch.save(model.state_dict(), os.path.join(workdir, config["model_path"]))
     logger.info("Successfully finished model saving")
 
     # --- test stage ---
