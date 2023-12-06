@@ -3,6 +3,7 @@ from typing import Any, Dict
 
 import yaml
 import click
+import mlflow
 
 from divrec.utils import get_logger
 from divrec.models import RandomModel
@@ -29,8 +30,10 @@ def load_config(path: str) -> Dict[str, Any]:
 @click.argument("config_path")
 def main(config_path: str) -> None:
     config = load_config(config_path)
-
     logger = get_logger("random_model_experiment", filepath=config.get("logfile"))
+    mlflow.set_tracking_uri(config["mlflow_tracking_uri"])
+    mlflow.set_experiment(config["mlflow_experiment"])
+    mlflow.log_artifact(config_path)  # save config for experiment
 
     datasets = movie_lens_load(config["data_directory"])
     logger.info("Successfully load data")
@@ -47,6 +50,7 @@ def main(config_path: str) -> None:
         batch_size=200,
     )
     logger.info(f"Successfully evaluate AUC on test: {auc_score[0].item()}")
+    mlflow.log_metric("auc_score", auc_score[0].item())
 
     losses = [
         EntropyDiversityScore(dataset=datasets.train),
@@ -64,7 +68,9 @@ def main(config_path: str) -> None:
         number_of_recommendations=config["k"]
     )
     for loss, value in zip(losses, loss_values):
-        logger.info(f"Successfully evaluate {loss.__class__.__name__}@{config['k']} on test: {value.item()}")
+        loss_name = f"{loss.__class__.__name__}_at_{config['k']}"
+        logger.info(f"Successfully evaluate {loss_name} on test: {value.item()}")
+        mlflow.log_metric(loss_name, value.item())
 
 
 if __name__ == '__main__':
