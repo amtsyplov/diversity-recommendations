@@ -15,7 +15,6 @@ if __name__ == "__main__":
         version=read_version(),
         packages=[
             "divrec_experiments",
-            "divrec_experiments.utils",
             "divrec_experiments.datasets",
         ],
         url="",
