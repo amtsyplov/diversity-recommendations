@@ -1,4 +1,5 @@
 from itertools import combinations
+
 import torch
 
 from divrec.losses.base_losses import RecommendationsAwareLoss, DatasetAwareLoss

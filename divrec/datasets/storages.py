@@ -1,5 +1,5 @@
-from typing import List, Optional
 from dataclasses import dataclass, field
+from typing import List, Optional
 
 import torch
 
@@ -63,8 +63,12 @@ class UserItemInteractionsDataset:
             self.number_of_users = max(self.number_of_users, users.max() + 1)
             self.number_of_items = max(self.number_of_items, items.max() + 1)
 
-            assert torch.all(torch.isin(users, torch.arange(self.number_of_users))).item()
-            assert torch.all(torch.isin(items, torch.arange(self.number_of_items))).item()
+            assert torch.all(
+                torch.isin(users, torch.arange(self.number_of_users))
+            ).item()
+            assert torch.all(
+                torch.isin(items, torch.arange(self.number_of_items))
+            ).item()
 
         if self.interaction_scores is not None:
             assert self.interactions is not None

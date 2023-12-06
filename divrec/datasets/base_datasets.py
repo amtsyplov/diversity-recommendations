@@ -10,7 +10,6 @@ from divrec.datasets.storages import (
     get_user_features,
 )
 
-
 PointWiseRow = Tuple[
     int,  # user_id
     int,  # item_id
@@ -137,7 +136,9 @@ class RankingDataset(IterableDataset):
     def __iter__(self) -> Iterator[RankingRow]:
         items = frozenset(range(self.data.number_of_items))
         for user_id in range(self.data.number_of_users):
-            positives = self.data.interactions[self.data.interactions[:, 0] == user_id, 1]
+            positives = self.data.interactions[
+                self.data.interactions[:, 0] == user_id, 1
+            ]
 
             if self.frozen is not None:
                 frozen = frozenset(

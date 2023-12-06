@@ -1,4 +1,5 @@
 import math
+
 import torch
 
 from divrec.losses.base_losses import DatasetAwareLoss, RecommendationsAwareLoss

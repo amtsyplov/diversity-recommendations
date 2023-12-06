@@ -41,7 +41,9 @@ def pair_wise_score_loop(
         positives = model(user_id, pos, user_features, pos_features)
         negatives = model(user_id, neg, user_features, neg_features)
         for loss in losses:
-            loss_values[loss.__class__.__name__].append(loss.pair_wise(positives, negatives))
+            loss_values[loss.__class__.__name__].append(
+                loss.pair_wise(positives, negatives)
+            )
     return [
         loss.reduce_loss_values(torch.concatenate(loss_values[loss.__class__.__name__]))
         for loss in losses
