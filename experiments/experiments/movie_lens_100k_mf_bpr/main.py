@@ -4,7 +4,12 @@ import click
 import mlflow
 import torch
 
-from divrec.datasets import UserItemInteractionsDataset, PointWiseDataset, PairWiseDataset, RankingDataset
+from divrec.datasets import (
+    UserItemInteractionsDataset,
+    PointWiseDataset,
+    PairWiseDataset,
+    RankingDataset,
+)
 from divrec.losses import MSELoss
 from divrec.metrics import (
     AUCScore,
@@ -16,12 +21,18 @@ from divrec.metrics import (
     RecallAtKScore,
 )
 from divrec.models import MatrixFactorization
-from divrec.train import point_wise_train_loop, pair_wise_score_loop, recommendations_score_loop
+from divrec.train import (
+    point_wise_train_loop,
+    pair_wise_score_loop,
+    recommendations_score_loop,
+)
 from divrec_experiments.datasets import movie_lens_load
 from divrec_experiments.utils import load_yaml, get_logger
 
 
-def train_validation_split(dataset: UserItemInteractionsDataset, validation_size: int) -> Tuple[UserItemInteractionsDataset, UserItemInteractionsDataset]:
+def train_validation_split(
+    dataset: UserItemInteractionsDataset, validation_size: int
+) -> Tuple[UserItemInteractionsDataset, UserItemInteractionsDataset]:
     """
 
     :param dataset: train data
@@ -43,7 +54,9 @@ def train_validation_split(dataset: UserItemInteractionsDataset, validation_size
         train_interactions_scores.append(user_interactions_scores[:-validation_size])
 
         validation_interactions.append(user_interactions[-validation_size:])
-        validation_interactions_scores.append(user_interactions_scores[-validation_size:])
+        validation_interactions_scores.append(
+            user_interactions_scores[-validation_size:]
+        )
 
     train = UserItemInteractionsDataset(
         interactions=torch.concatenate(train_interactions).long(),
@@ -81,10 +94,15 @@ def main(config_path: str) -> None:
     logger.info("Successfully load dataset")
     mlflow.log_param("number_of_users", dataset.train.number_of_users)
     mlflow.log_param("number_of_items", dataset.train.number_of_items)
-    mlflow.log_param("number_of_interactions", dataset.train.number_of_interactions + dataset.test.number_of_interactions)
+    mlflow.log_param(
+        "number_of_interactions",
+        dataset.train.number_of_interactions + dataset.test.number_of_interactions,
+    )
 
     # --- prepare train validation split ---
-    train, validation = train_validation_split(dataset.train, config["items_per_user_for_validation"])
+    train, validation = train_validation_split(
+        dataset.train, config["items_per_user_for_validation"]
+    )
     test = dataset.test
     logger.info("Successfully split data for train, validation and test")
     mlflow.log_param("train_interactions_count", train.number_of_interactions)
@@ -92,7 +110,11 @@ def main(config_path: str) -> None:
     mlflow.log_param("test_interactions_count", test.number_of_interactions)
 
     # --- model and optimizer instantiating ---
-    model = MatrixFactorization(train.number_of_users, train.number_of_items, embedding_dim=config["embedding_dim"])
+    model = MatrixFactorization(
+        train.number_of_users,
+        train.number_of_items,
+        embedding_dim=config["embedding_dim"],
+    )
     model.to(config["device"])
 
     optimizer = torch.optim.Adam(model.parameters(), **config["optimizer"])
@@ -100,24 +122,19 @@ def main(config_path: str) -> None:
 
     # --- train stage ---
     train_dataset = PointWiseDataset(train)
-    validation_dataset = PairWiseDataset(validation, frozen=train, max_sampled=config["validation_max_sampled"])
+    validation_dataset = PairWiseDataset(
+        validation, frozen=train, max_sampled=config["validation_max_sampled"]
+    )
     epochs = config["epochs"]
     for epoch in config["epochs"]:
         mse, _ = point_wise_train_loop(
-            train_dataset,
-            model,
-            loss_functions,
-            optimizer,
-            **config["train_loader"]
+            train_dataset, model, loss_functions, optimizer, **config["train_loader"]
         )
         logger.info(f"Epoch [{epoch + 1}/{epochs}] train MSE: {mse:.6f}")
         mlflow.log_metric("mse_loss", mse, step=epoch)
 
         scores = pair_wise_score_loop(
-            validation_dataset,
-            model,
-            [AUCScore()],
-            **config["validation_loader"]
+            validation_dataset, model, [AUCScore()], **config["validation_loader"]
         )
         logger.info(f"Epoch [{epoch + 1}/{epochs}] validation AUC: {scores[0]:.6f}")
         mlflow.log_metric("auc_score", scores[0], step=epoch)
@@ -130,13 +147,12 @@ def main(config_path: str) -> None:
 
     # --- test stage ---
     test_ranking_dataset = RankingDataset(test, frozen=dataset.train)
-    test_pairwise_dataset = PairWiseDataset(test, frozen=dataset.train, max_sampled=config["test_max_sampled"])
+    test_pairwise_dataset = PairWiseDataset(
+        test, frozen=dataset.train, max_sampled=config["test_max_sampled"]
+    )
 
     scores = pair_wise_score_loop(
-        test_pairwise_dataset,
-        model,
-        [AUCScore()],
-        **config["test_pairwise_loader"],
+        test_pairwise_dataset, model, [AUCScore()], **config["test_pairwise_loader"],
     )
     logger.info(f"test AUC: {scores[0].item()}")
     mlflow.log_metric("auc_score", scores[0].item())
@@ -147,14 +163,11 @@ def main(config_path: str) -> None:
         NDCGScore(),
         PRI(dataset=dataset.train),
         PrecisionAtKScore(),
-        RecallAtKScore()
+        RecallAtKScore(),
     ]
 
     loss_values = recommendations_score_loop(
-        test_ranking_dataset,
-        model,
-        losses,
-        number_of_recommendations=config["k"],
+        test_ranking_dataset, model, losses, number_of_recommendations=config["k"],
     )
 
     for loss, value in zip(losses, loss_values):
@@ -163,5 +176,5 @@ def main(config_path: str) -> None:
         mlflow.log_metric(loss_name, value.item())
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

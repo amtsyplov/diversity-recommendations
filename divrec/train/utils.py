@@ -51,9 +51,7 @@ def pair_wise_score_loop(
 
 
 def get_model_recommendations(
-    dataset: RankingDataset,
-    model: RankingModel,
-    number_of_recommendations: int,
+    dataset: RankingDataset, model: RankingModel, number_of_recommendations: int,
 ) -> torch.LongTensor:
     recommendations = []
     for (
@@ -121,9 +119,10 @@ def point_wise_train_loop(
             for i, score in enumerate(scores):
                 mean_scores[i] += score(true_relevance, predicted_relevance).item()
 
-    return mean_loss / batch_count, [
-        mean_score / batch_count for mean_score in mean_scores
-    ]
+    return (
+        mean_loss / batch_count,
+        [mean_score / batch_count for mean_score in mean_scores],
+    )
 
 
 def pair_wise_train_loop(
@@ -157,9 +156,10 @@ def pair_wise_train_loop(
             for i, score in enumerate(scores):
                 mean_scores[i] += score(positives, negatives).item()
 
-    return mean_loss / batch_count, [
-        mean_score / batch_count for mean_score in mean_scores
-    ]
+    return (
+        mean_loss / batch_count,
+        [mean_score / batch_count for mean_score in mean_scores],
+    )
 
 
 def recommendations_train_loop(
@@ -208,6 +208,7 @@ def recommendations_train_loop(
             for i, score in enumerate(scores):
                 mean_scores[i] += score(interactions, recommendations).item()
 
-    return mean_loss / batch_count, [
-        mean_score / batch_count for mean_score in mean_scores
-    ]
+    return (
+        mean_loss / batch_count,
+        [mean_score / batch_count for mean_score in mean_scores],
+    )

@@ -36,21 +36,15 @@ def load_data(path: str, filename: str) -> UserItemInteractionsDataset:
     user_features = pd.read_csv(
         os.path.join(path, "u.user"),
         sep="|",
-        names=["user_id", "age", "gender", "occupation", "zip_code"]
+        names=["user_id", "age", "gender", "occupation", "zip_code"],
     )
     user_features.drop(
-        columns=[
-            "user_id",
-            "gender",
-            "occupation",
-            "zip_code",
-        ],
-        inplace=True,
+        columns=["user_id", "gender", "occupation", "zip_code",], inplace=True,
     )
 
     item_features = pd.read_csv(
         os.path.join(path, "u.item"),
-        encoding='latin-1',
+        encoding="latin-1",
         sep="|",
         names=[
             "movie_id",
@@ -77,7 +71,7 @@ def load_data(path: str, filename: str) -> UserItemInteractionsDataset:
             "Thriller",
             "War",
             "Western",
-        ]
+        ],
     )
     item_features.drop(
         columns=[
@@ -93,15 +87,16 @@ def load_data(path: str, filename: str) -> UserItemInteractionsDataset:
     return UserItemInteractionsDataset(
         interactions=torch.LongTensor(rating[["user_id", "item_id"]].values),
         interaction_scores=torch.Tensor(rating["rating"].values),
-        item_features=Features(torch.Tensor(item_features.values.tolist()), item_features.columns),
-        user_features=Features(torch.Tensor(user_features.values.tolist()), user_features.columns),
+        item_features=Features(
+            torch.Tensor(item_features.values.tolist()), item_features.columns
+        ),
+        user_features=Features(
+            torch.Tensor(user_features.values.tolist()), user_features.columns
+        ),
         number_of_items=info["no_items"],
         number_of_users=info["no_users"],
     )
 
 
 def movie_lens_load(path: str) -> MovieLens100K:
-    return MovieLens100K(
-        load_data(path, "ua.base"),
-        load_data(path, "ua.test"),
-    )
+    return MovieLens100K(load_data(path, "ua.base"), load_data(path, "ua.test"),)

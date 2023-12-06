@@ -1,5 +1,3 @@
-
-
 def to_camel_case(s: str) -> str:
     t = ""
     for i in range(len(s) - 1):
