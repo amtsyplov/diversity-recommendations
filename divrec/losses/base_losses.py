@@ -3,6 +3,7 @@ from typing import Optional
 import torch
 
 from divrec.datasets import UserItemInteractionsDataset
+from divrec.utils import to_camel_case
 
 
 class DatasetAwareLoss:
@@ -24,6 +25,10 @@ class ScoreWithReduction:
         elif self.reduction == "mean":
             return torch.sum(loss_values, dim=0) / loss_values.size(0)
         return torch.sum(loss_values, dim=0)
+
+    @property
+    def name(self):
+        return to_camel_case(type(self).__name__)
 
 
 class PointWiseLoss(torch.nn.Module, ScoreWithReduction):
