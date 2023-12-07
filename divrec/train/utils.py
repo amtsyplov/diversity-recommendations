@@ -70,7 +70,7 @@ def get_model_recommendations(
             negative_item_features,
         )
         recommendations.append(
-            negative_item_id[torch.argsort(model_scores)][
+            negative_item_id[torch.argsort(model_scores, descending=True)][
                 :number_of_recommendations
             ].tolist()
         )

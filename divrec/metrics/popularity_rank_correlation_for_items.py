@@ -7,7 +7,6 @@ def rank(a: torch.Tensor, dim=-1, descending=False, stable=False):
     return torch.argsort(
         torch.argsort(a, dim=dim, descending=descending, stable=stable),
         dim=dim,
-        descending=descending,
         stable=stable,
     )
 
@@ -50,6 +49,7 @@ class PRI(RecommendationsAwareLoss, DatasetAwareLoss):
         )
         self.popularity = torch.zeros(self.dataset.number_of_items, dtype=torch.float)
         self.popularity[items] = counts.float()
+        self.popularity_rank = rank(self.popularity).float()
 
     def forward(
         self, interactions: torch.LongTensor, recommendations: torch.LongTensor
@@ -62,4 +62,4 @@ class PRI(RecommendationsAwareLoss, DatasetAwareLoss):
         items, ranks = avg_rank(recommendations)
         average_ranks = torch.zeros(self.dataset.number_of_items)
         average_ranks[items] = ranks
-        return spearman_rank_correlation(self.popularity, average_ranks)
+        return spearman_rank_correlation(self.popularity_rank, average_ranks, evaluate_rank=False)
