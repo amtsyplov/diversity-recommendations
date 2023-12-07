@@ -7,7 +7,6 @@ def rank(a: torch.Tensor, dim=-1, descending=False, stable=False):
     return torch.argsort(
         torch.argsort(a, dim=dim, descending=descending, stable=stable),
         dim=dim,
-        descending=descending,
         stable=stable,
     )
 
@@ -29,10 +28,10 @@ def avg_rank(recommendations: torch.LongTensor):
     ranks = {}
     for user in range(recommendations.size(0)):
         for index, item in enumerate(recommendations[user]):
-            if item in ranks:
-                ranks[item].append(index)
+            if item.item() in ranks:
+                ranks[item.item()].append(index)
             else:
-                ranks[item] = [index]
+                ranks[item.item()] = [index]
     average_ranks = [[item, sum(r) / len(r)] for item, r in ranks.items()]
     items, average_ranks = zip(*average_ranks)
     items = torch.LongTensor(items)
@@ -50,6 +49,7 @@ class PRI(RecommendationsAwareLoss, DatasetAwareLoss):
         )
         self.popularity = torch.zeros(self.dataset.number_of_items, dtype=torch.float)
         self.popularity[items] = counts.float()
+        self.popularity_rank = rank(self.popularity, descending=True).float()
 
     def forward(
         self, interactions: torch.LongTensor, recommendations: torch.LongTensor
@@ -60,6 +60,4 @@ class PRI(RecommendationsAwareLoss, DatasetAwareLoss):
         self, interactions: torch.LongTensor, recommendations: torch.LongTensor
     ) -> torch.Tensor:
         items, ranks = avg_rank(recommendations)
-        average_ranks = torch.zeros(self.dataset.number_of_items)
-        average_ranks[items] = ranks
-        return spearman_rank_correlation(self.popularity, average_ranks)
+        return spearman_rank_correlation(self.popularity_rank[items], ranks, evaluate_rank=False)

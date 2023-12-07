@@ -1,0 +1,10 @@
+mlflow_tracking_uri: http://127.0.0.1:8080/
+mlflow_experiment_name: top_n_recommendations
+logfile: main.log
+data_directory: /Users/alexey.tsyplov/Projects/diversity-recommendations/experiments/data/ml-100k
+device: cpu
+model_path: model.pth
+test_max_sampled: 200
+test_pairwise_loader:
+  batch_size: 100
+k: 10

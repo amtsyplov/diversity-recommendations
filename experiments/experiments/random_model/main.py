@@ -5,7 +5,6 @@ import yaml
 import click
 import mlflow
 
-from divrec.utils import get_logger
 from divrec.models import RandomModel
 from divrec.datasets import PairWiseDataset, RankingDataset
 from divrec.metrics import (
@@ -19,6 +18,7 @@ from divrec.metrics import (
 )
 from divrec.train.utils import pair_wise_score_loop, recommendations_score_loop
 from divrec_experiments.datasets import movie_lens_load
+from divrec_experiments.utils import create_if_not_exist, get_logger
 
 
 def load_config(path: str) -> Dict[str, Any]:
@@ -30,7 +30,12 @@ def load_config(path: str) -> Dict[str, Any]:
 @click.argument("config_path")
 def main(config_path: str) -> None:
     config = load_config(config_path)
-    logger = get_logger("random_model_experiment", filepath=config.get("logfile"))
+    workdir = config["workdir"] if "workdir" in config else os.path.abspath("workdir")
+    create_if_not_exist(workdir)
+    logger = get_logger(
+        config["mlflow_experiment"],
+        filepath=os.path.join(workdir, config["logfile"]),
+    )
     mlflow.set_tracking_uri(config["mlflow_tracking_uri"])
     mlflow.set_experiment(config["mlflow_experiment"])
     mlflow.log_artifact(config_path)  # save config for experiment
