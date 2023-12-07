@@ -99,7 +99,7 @@ def point_wise_train_loop(
     scores: Optional[List[PointWiseLoss]] = None,
     **loader_params,
 ) -> Tuple[float, List[float]]:
-    assert all(score.reduce for score in scores)
+    assert scores is None or all(score.reduce for score in scores)
     model.train()
     loader = dataset.loader(**loader_params)
     batch_count = 0
@@ -121,9 +121,10 @@ def point_wise_train_loop(
             for i, score in enumerate(scores):
                 mean_scores[i] += score(true_relevance, predicted_relevance).item()
 
-    return mean_loss / batch_count, [
-        mean_score / batch_count for mean_score in mean_scores
-    ]
+    return (
+        mean_loss / batch_count,
+        [mean_score / batch_count for mean_score in mean_scores],
+    )
 
 
 def pair_wise_train_loop(
@@ -134,7 +135,7 @@ def pair_wise_train_loop(
     scores: Optional[List[PairWiseLoss]] = None,
     **loader_params,
 ) -> Tuple[float, List[float]]:
-    assert all(score.reduce for score in scores)
+    assert scores is None or all(score.reduce for score in scores)
     model.train()
     loader = dataset.loader(**loader_params)
     batch_count = 0
@@ -157,9 +158,10 @@ def pair_wise_train_loop(
             for i, score in enumerate(scores):
                 mean_scores[i] += score(positives, negatives).item()
 
-    return mean_loss / batch_count, [
-        mean_score / batch_count for mean_score in mean_scores
-    ]
+    return (
+        mean_loss / batch_count,
+        [mean_score / batch_count for mean_score in mean_scores],
+    )
 
 
 def recommendations_train_loop(
@@ -170,7 +172,7 @@ def recommendations_train_loop(
     optimizer: torch.optim.Optimizer,
     scores: Optional[List[RecommendationsAwareLoss]] = None,
 ) -> Tuple[float, List[float]]:
-    assert all(score.reduce for score in scores)
+    assert scores is None or all(score.reduce for score in scores)
     model.train()
     batch_count = 0
     mean_loss = 0.0
@@ -208,6 +210,7 @@ def recommendations_train_loop(
             for i, score in enumerate(scores):
                 mean_scores[i] += score(interactions, recommendations).item()
 
-    return mean_loss / batch_count, [
-        mean_score / batch_count for mean_score in mean_scores
-    ]
+    return (
+        mean_loss / batch_count,
+        [mean_score / batch_count for mean_score in mean_scores],
+    )

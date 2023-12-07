@@ -13,10 +13,7 @@ if __name__ == "__main__":
     setup(
         name="divrec_experiments",
         version=read_version(),
-        packages=[
-            "divrec_experiments",
-            "divrec_experiments.datasets",
-        ],
+        packages=["divrec_experiments", "divrec_experiments.datasets"],
         url="",
         license="MIT License",
         author="amtsyplov",

@@ -4,7 +4,6 @@ from dataclasses import dataclass
 import pandas as pd
 import torch
 
-from divrec.utils import get_logger
 from divrec.datasets import UserItemInteractionsDataset, Features
 
 
@@ -15,8 +14,6 @@ class MovieLens100K:
 
 
 def load_data(path: str, filename: str) -> UserItemInteractionsDataset:
-    logger = get_logger(__name__)
-
     info = {}
     with open(os.path.join(path, "u.info"), mode="r") as file:
         for line in file.readlines():
@@ -30,27 +27,20 @@ def load_data(path: str, filename: str) -> UserItemInteractionsDataset:
     ).sort_values("timestamp", ignore_index=True)
     rating["user_id"] = rating["user_id"] - 1
     rating["item_id"] = rating["item_id"] - 1
-    logger.info(f'user max {rating["user_id"].unique().max() + 1}')
-    logger.info(f'item max {rating["item_id"].unique().max() + 1}')
 
     user_features = pd.read_csv(
         os.path.join(path, "u.user"),
         sep="|",
-        names=["user_id", "age", "gender", "occupation", "zip_code"]
+        names=["user_id", "age", "gender", "occupation", "zip_code"],
     )
     user_features.drop(
-        columns=[
-            "user_id",
-            "gender",
-            "occupation",
-            "zip_code",
-        ],
+        columns=["user_id", "gender", "occupation", "zip_code"],
         inplace=True,
     )
 
     item_features = pd.read_csv(
         os.path.join(path, "u.item"),
-        encoding='latin-1',
+        encoding="latin-1",
         sep="|",
         names=[
             "movie_id",
@@ -77,7 +67,7 @@ def load_data(path: str, filename: str) -> UserItemInteractionsDataset:
             "Thriller",
             "War",
             "Western",
-        ]
+        ],
     )
     item_features.drop(
         columns=[
@@ -93,8 +83,12 @@ def load_data(path: str, filename: str) -> UserItemInteractionsDataset:
     return UserItemInteractionsDataset(
         interactions=torch.LongTensor(rating[["user_id", "item_id"]].values),
         interaction_scores=torch.Tensor(rating["rating"].values),
-        item_features=Features(torch.Tensor(item_features.values.tolist()), item_features.columns),
-        user_features=Features(torch.Tensor(user_features.values.tolist()), user_features.columns),
+        item_features=Features(
+            torch.Tensor(item_features.values.tolist()), item_features.columns
+        ),
+        user_features=Features(
+            torch.Tensor(user_features.values.tolist()), user_features.columns
+        ),
         number_of_items=info["no_items"],
         number_of_users=info["no_users"],
     )

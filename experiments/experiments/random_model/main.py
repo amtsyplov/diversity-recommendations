@@ -41,7 +41,9 @@ def main(config_path: str) -> None:
     model = RandomModel(datasets.test.number_of_users, datasets.test.number_of_items)
     model.to(config["device"])
 
-    pair_wise_test_dataset = PairWiseDataset(datasets.test, frozen=datasets.train, max_sampled=20)
+    pair_wise_test_dataset = PairWiseDataset(
+        datasets.test, frozen=datasets.train, max_sampled=20
+    )
 
     auc_score = pair_wise_score_loop(
         pair_wise_test_dataset,
@@ -58,14 +60,11 @@ def main(config_path: str) -> None:
         NDCGScore(),
         PRI(dataset=datasets.train),
         PrecisionAtKScore(),
-        RecallAtKScore()
+        RecallAtKScore(),
     ]
     ranking_test_dataset = RankingDataset(datasets.test, frozen=datasets.train)
     loss_values = recommendations_score_loop(
-        ranking_test_dataset,
-        model,
-        losses,
-        number_of_recommendations=config["k"]
+        ranking_test_dataset, model, losses, number_of_recommendations=config["k"]
     )
     for loss, value in zip(losses, loss_values):
         loss_name = f"{loss.__class__.__name__}_at_{config['k']}"
@@ -73,5 +72,5 @@ def main(config_path: str) -> None:
         mlflow.log_metric(loss_name, value.item())
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

@@ -10,6 +10,7 @@ from .intra_list_diversity_score import (
     IntraListBinaryUnfairnessScore,
 )
 from .log_sigmoid_difference_loss import LogSigmoidDifferenceLoss
+from .mse_loss import MSELoss
 
 __all__ = [
     "LogSigmoidDifferenceLoss",
@@ -19,5 +20,6 @@ __all__ = [
     "PairWiseLoss",
     "RecommendationsAwareLoss",
     "DatasetAwareLoss",
+    "MSELoss",
     "ScoreWithReduction",
 ]
