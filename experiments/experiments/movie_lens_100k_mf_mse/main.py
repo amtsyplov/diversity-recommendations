@@ -28,7 +28,12 @@ from divrec.train import (
     recommendations_score_loop,
 )
 from divrec_experiments.datasets import movie_lens_load
-from divrec_experiments.utils import load_yaml, get_logger, create_if_not_exist
+from divrec_experiments.utils import (
+    load_yaml,
+    get_logger,
+    create_if_not_exist,
+    seed_everything,
+)
 
 
 def train_validation_split(
@@ -94,6 +99,7 @@ def main(config_path: str) -> None:
     mlflow.set_tracking_uri(config["mlflow_tracking_uri"])
     mlflow.set_experiment(config["mlflow_experiment_name"])
     mlflow.log_artifact(config_path)
+    seed_everything(config["seed"])
 
     # --- load and preprocess dataset ---
     dataset = movie_lens_load(config["data_directory"])

@@ -27,7 +27,12 @@ from divrec.train import (
     recommendations_score_loop,
 )
 from divrec_experiments.datasets import movie_lens_load
-from divrec_experiments.utils import load_yaml, get_logger, create_if_not_exist
+from divrec_experiments.utils import (
+    load_yaml,
+    get_logger,
+    create_if_not_exist,
+    seed_everything,
+)
 
 
 def train_validation_split(
@@ -93,6 +98,7 @@ def main(config_path: str) -> None:
     mlflow.set_tracking_uri(config["mlflow_tracking_uri"])
     mlflow.set_experiment(config["mlflow_experiment_name"])
     mlflow.log_artifact(config_path)
+    seed_everything(config["seed"])
 
     # --- load and preprocess dataset ---
     dataset = movie_lens_load(config["data_directory"])
@@ -134,9 +140,16 @@ def main(config_path: str) -> None:
     epochs = config["epochs"]
     for epoch in range(config["epochs"]):
         bpr, scores = pair_wise_train_loop(
-            train_dataset, model, loss_function, optimizer, scores=score_functions, **config["train_loader"]
+            train_dataset,
+            model,
+            loss_function,
+            optimizer,
+            scores=score_functions,
+            **config["train_loader"],
         )
-        logger.info(f"Epoch [{epoch + 1}/{epochs}] train BPR: {bpr:.6f} AUC: {scores[0]:.6f}")
+        logger.info(
+            f"Epoch [{epoch + 1}/{epochs}] train BPR: {bpr:.6f} AUC: {scores[0]:.6f}"
+        )
         mlflow.log_metric("bpr_loss", bpr, step=epoch)
         mlflow.log_metric("train_auc_score", scores[0], step=epoch)
 

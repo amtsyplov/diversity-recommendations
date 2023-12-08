@@ -18,7 +18,7 @@ from divrec.metrics import (
 )
 from divrec.train.utils import pair_wise_score_loop, recommendations_score_loop
 from divrec_experiments.datasets import movie_lens_load
-from divrec_experiments.utils import create_if_not_exist, get_logger
+from divrec_experiments.utils import create_if_not_exist, get_logger, seed_everything
 
 
 def load_config(path: str) -> Dict[str, Any]:
@@ -39,6 +39,7 @@ def main(config_path: str) -> None:
     mlflow.set_tracking_uri(config["mlflow_tracking_uri"])
     mlflow.set_experiment(config["mlflow_experiment"])
     mlflow.log_artifact(config_path)  # save config for experiment
+    seed_everything(config["seed"])
 
     datasets = movie_lens_load(config["data_directory"])
     logger.info("Successfully load data")
