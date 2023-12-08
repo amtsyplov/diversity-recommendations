@@ -2,7 +2,9 @@ import os
 import json
 import logging
 from typing import Any, Dict, Optional
-
+import random
+import numpy as np
+import torch
 import yaml
 
 
@@ -45,3 +47,13 @@ def get_logger(name: str, filepath: Optional[str] = None):
         logger.addHandler(get_file_handler(filepath))
     logger.addHandler(get_stream_handler())
     return logger
+
+
+def seed_everything(seed: int):
+    random.seed(seed)
+    os.environ["PYTHONHASHSEED"] = str(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = True
