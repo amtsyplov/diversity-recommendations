@@ -1,11 +1,11 @@
 import os
-from typing import Any, Dict
 
-import yaml
 import click
 import mlflow
+import torch
+from divrec_experiments.datasets import movie_lens_load
+from divrec_experiments.utils import create_if_not_exist, get_logger, seed_everything, load_yaml
 
-from divrec.models import RandomModel
 from divrec.datasets import PairWiseDataset, RankingDataset
 from divrec.metrics import (
     AUCScore,
@@ -16,20 +16,15 @@ from divrec.metrics import (
     PrecisionAtKScore,
     RecallAtKScore,
 )
+from divrec.models import RandomModel
 from divrec.train.utils import pair_wise_score_loop, recommendations_score_loop
-from divrec_experiments.datasets import movie_lens_load
-from divrec_experiments.utils import create_if_not_exist, get_logger
-
-
-def load_config(path: str) -> Dict[str, Any]:
-    with open(os.path.abspath(path), mode="r") as file:
-        return yaml.safe_load(file)
 
 
 @click.command()
 @click.argument("config_path")
 def main(config_path: str) -> None:
-    config = load_config(config_path)
+    # --- instantiate config, logger and mlflow client ---
+    config = load_yaml(config_path)
     workdir = config["workdir"] if "workdir" in config else os.path.abspath("workdir")
     create_if_not_exist(workdir)
     logger = get_logger(
@@ -39,41 +34,62 @@ def main(config_path: str) -> None:
     mlflow.set_tracking_uri(config["mlflow_tracking_uri"])
     mlflow.set_experiment(config["mlflow_experiment"])
     mlflow.log_artifact(config_path)  # save config for experiment
+    seed_everything(config["seed"])
 
-    datasets = movie_lens_load(config["data_directory"])
+    # --- load and preprocess dataset ---
+    dataset = movie_lens_load(config["data_directory"])
     logger.info("Successfully load data")
+    mlflow.log_param("number_of_users", dataset.train.number_of_users)
+    mlflow.log_param("number_of_items", dataset.train.number_of_items)
+    mlflow.log_param(
+        "number_of_interactions",
+        dataset.train.number_of_interactions + dataset.test.number_of_interactions,
+    )
+    mlflow.log_param("train_interactions_count", dataset.train.number_of_interactions)
+    mlflow.log_param("test_interactions_count", dataset.test.number_of_interactions)
 
-    model = RandomModel(datasets.test.number_of_users, datasets.test.number_of_items)
+    # --- model instantiating ---
+    model = RandomModel(dataset.test.number_of_users, dataset.test.number_of_items)
     model.to(config["device"])
 
-    pair_wise_test_dataset = PairWiseDataset(
-        datasets.test, frozen=datasets.train, max_sampled=20
+    # --- model saving ---
+    torch.save(model.state_dict(), os.path.join(workdir, config["model_path"]))
+    logger.info("Successfully finished model saving")
+
+    # --- test stage ---
+    test_ranking_dataset = RankingDataset(dataset.test, frozen=dataset.train)
+    test_pairwise_dataset = PairWiseDataset(
+        dataset.test, frozen=dataset.train, max_sampled=config["test_max_sampled"]
     )
 
-    auc_score = pair_wise_score_loop(
-        pair_wise_test_dataset,
+    scores = pair_wise_score_loop(
+        test_pairwise_dataset,
         model,
         [AUCScore()],
-        batch_size=200,
+        **config["test_pairwise_loader"],
     )
-    logger.info(f"Successfully evaluate AUC on test: {auc_score[0].item()}")
-    mlflow.log_metric("auc_score", auc_score[0].item())
+    logger.info(f"test AUC: {scores[0].item()}")
+    mlflow.log_metric("auc_score", scores[0].item())
 
     losses = [
-        EntropyDiversityScore(dataset=datasets.train),
+        EntropyDiversityScore(dataset=dataset.train),
         MeanAveragePrecisionAtKScore(),
         NDCGScore(),
-        PRI(dataset=datasets.train),
+        PRI(dataset=dataset.train),
         PrecisionAtKScore(),
         RecallAtKScore(),
     ]
-    ranking_test_dataset = RankingDataset(datasets.test, frozen=datasets.train)
+
     loss_values = recommendations_score_loop(
-        ranking_test_dataset, model, losses, number_of_recommendations=config["k"]
+        test_ranking_dataset,
+        model,
+        losses,
+        number_of_recommendations=config["k"],
     )
+
     for loss, value in zip(losses, loss_values):
-        loss_name = f"{loss.__class__.__name__}_at_{config['k']}"
-        logger.info(f"Successfully evaluate {loss_name} on test: {value.item()}")
+        loss_name = f"{loss.name}_at_{config['k']}"
+        logger.info(f"test {loss_name}: {value.item()}")
         mlflow.log_metric(loss_name, value.item())
 
 

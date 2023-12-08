@@ -3,6 +3,7 @@ mlflow_experiment_name: top_n_recommendations
 logfile: main.log
 data_directory: /Users/alexey.tsyplov/Projects/diversity-recommendations/experiments/data/ml-100k
 device: cpu
+seed: 0
 model_path: model.pth
 test_max_sampled: 200
 test_pairwise_loader:

@@ -5,7 +5,12 @@ import click
 import mlflow
 import torch
 from divrec_experiments.datasets import movie_lens_load
-from divrec_experiments.utils import load_yaml, get_logger, create_if_not_exist
+from divrec_experiments.utils import (
+    load_yaml,
+    get_logger,
+    create_if_not_exist,
+    seed_everything,
+)
 
 from divrec.datasets import (
     PairWiseDataset,
@@ -59,6 +64,7 @@ def main(config_path: str) -> None:
     mlflow.set_tracking_uri(config["mlflow_tracking_uri"])
     mlflow.set_experiment(config["mlflow_experiment_name"])
     mlflow.log_artifact(config_path)
+    seed_everything(config["seed"])
 
     # --- load and preprocess dataset ---
     dataset = movie_lens_load(config["data_directory"])
@@ -73,7 +79,9 @@ def main(config_path: str) -> None:
     mlflow.log_param("test_interactions_count", dataset.test.number_of_interactions)
 
     # --- model instantiating ---
-    model = TopRecommendations(dataset.train.number_of_items, dataset.train.interactions)
+    model = TopRecommendations(
+        dataset.train.number_of_items, dataset.train.interactions
+    )
     model.to(config["device"])
 
     # --- model saving ---

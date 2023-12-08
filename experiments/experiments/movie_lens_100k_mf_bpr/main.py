@@ -7,11 +7,10 @@ import torch
 
 from divrec.datasets import (
     UserItemInteractionsDataset,
-    PointWiseDataset,
     PairWiseDataset,
     RankingDataset,
 )
-from divrec.losses import MSELoss
+from divrec.losses import LogSigmoidDifferenceLoss
 from divrec.metrics import (
     AUCScore,
     EntropyDiversityScore,
@@ -23,7 +22,7 @@ from divrec.metrics import (
 )
 from divrec.models import MatrixFactorization
 from divrec.train import (
-    point_wise_train_loop,
+    pair_wise_train_loop,
     pair_wise_score_loop,
     recommendations_score_loop,
 )
@@ -130,26 +129,35 @@ def main(config_path: str) -> None:
     model.to(config["device"])
 
     optimizer = torch.optim.Adam(model.parameters(), **config["optimizer"])
-    loss_functions = MSELoss()
+    loss_function = LogSigmoidDifferenceLoss()
+    score_functions = [AUCScore()]
 
     # --- train stage ---
-    train_dataset = PointWiseDataset(train)
+    train_dataset = PairWiseDataset(train, max_sampled=config["train_max_sampled"])
     validation_dataset = PairWiseDataset(
         validation, frozen=train, max_sampled=config["validation_max_sampled"]
     )
     epochs = config["epochs"]
     for epoch in range(config["epochs"]):
-        mse, _ = point_wise_train_loop(
-            train_dataset, model, loss_functions, optimizer, **config["train_loader"]
+        bpr, scores = pair_wise_train_loop(
+            train_dataset,
+            model,
+            loss_function,
+            optimizer,
+            scores=score_functions,
+            **config["train_loader"],
         )
-        logger.info(f"Epoch [{epoch + 1}/{epochs}] train MSE: {mse:.6f}")
-        mlflow.log_metric("mse_loss", mse, step=epoch)
+        logger.info(
+            f"Epoch [{epoch + 1}/{epochs}] train BPR: {bpr:.6f} AUC: {scores[0]:.6f}"
+        )
+        mlflow.log_metric("bpr_loss", bpr, step=epoch)
+        mlflow.log_metric("train_auc_score", scores[0], step=epoch)
 
         scores = pair_wise_score_loop(
-            validation_dataset, model, [AUCScore()], **config["validation_loader"]
+            validation_dataset, model, score_functions, **config["validation_loader"]
         )
         logger.info(f"Epoch [{epoch + 1}/{epochs}] validation AUC: {scores[0]:.6f}")
-        mlflow.log_metric("auc_score", scores[0], step=epoch)
+        mlflow.log_metric("validation_auc_score", scores[0], step=epoch)
 
     logger.info("Successfully finished model train")
 
@@ -166,11 +174,11 @@ def main(config_path: str) -> None:
     scores = pair_wise_score_loop(
         test_pairwise_dataset,
         model,
-        [AUCScore()],
+        score_functions,
         **config["test_pairwise_loader"],
     )
     logger.info(f"test AUC: {scores[0].item()}")
-    mlflow.log_metric("auc_score", scores[0].item())
+    mlflow.log_metric("test_auc_score", scores[0].item())
 
     losses = [
         EntropyDiversityScore(dataset=dataset.train),

@@ -1,5 +1,5 @@
 mlflow_tracking_uri: http://127.0.0.1:8080/
-mlflow_experiment_name: movie_lens_100k_mf_mse
+mlflow_experiment_name: movie_lens_100k_mf_bpr
 seed: 0
 logfile: main.log
 data_directory: /Users/alexey.tsyplov/Projects/diversity-recommendations/experiments/data/ml-100k/
@@ -8,11 +8,11 @@ embedding_dim: 100
 device: cpu
 optimizer:
   lr: 0.001
+train_max_sampled: 20
 validation_max_sampled: 10
 epochs: 50
 train_loader:
   batch_size: 100
-  shuffle: True
 validation_loader:
   batch_size: 100
 model_path: model.pth

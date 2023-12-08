@@ -1,6 +1,11 @@
 data_directory: /Users/alexey.tsyplov/Projects/diversity-recommendations/experiments/data/ml-100k
 logfile: main.log
 device: cpu
+seed: 0
+model_path: model.pth
+test_max_sampled: 200
+test_pairwise_loader:
+  batch_size: 100
 k: 10
 mlflow_tracking_uri: http://127.0.0.1:8080
 mlflow_experiment: random_model
