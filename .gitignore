@@ -168,4 +168,4 @@ cython_debug/
 
 experiments/data/
 experiments/.mlruns
-**/workdir/
+experiments/scripts/workdir/

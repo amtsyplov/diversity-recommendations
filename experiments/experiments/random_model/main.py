@@ -69,7 +69,7 @@ def main(config_path: str) -> None:
         **config["test_pairwise_loader"],
     )
     logger.info(f"test AUC: {scores[0].item()}")
-    mlflow.log_metric("auc_score", scores[0].item())
+    mlflow.log_metric("test_auc_score", scores[0].item())
 
     losses = [
         EntropyDiversityScore(dataset=dataset.train),

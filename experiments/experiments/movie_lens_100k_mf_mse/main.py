@@ -149,7 +149,7 @@ def main(config_path: str) -> None:
             validation_dataset, model, [AUCScore()], **config["validation_loader"]
         )
         logger.info(f"Epoch [{epoch + 1}/{epochs}] validation AUC: {scores[0]:.6f}")
-        mlflow.log_metric("auc_score", scores[0], step=epoch)
+        mlflow.log_metric("validation_auc_score", scores[0], step=epoch)
 
     logger.info("Successfully finished model train")
 
@@ -170,7 +170,7 @@ def main(config_path: str) -> None:
         **config["test_pairwise_loader"],
     )
     logger.info(f"test AUC: {scores[0].item()}")
-    mlflow.log_metric("auc_score", scores[0].item())
+    mlflow.log_metric("test_auc_score", scores[0].item())
 
     losses = [
         EntropyDiversityScore(dataset=dataset.train),
