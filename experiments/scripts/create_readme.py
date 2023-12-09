@@ -23,6 +23,7 @@ def main(workdir: str, source: str) -> None:
 
     content = "## Current results:\n\n"
     content += "| " + " | ".join(data.columns.tolist()) + " |\n"
+    content += "| " + " | ".join(["---" for _ in data.columns.tolist()]) + " |\n"
     for row in data.values:
         content += "| " + " | ".join([f"{v:.6f}" for v in row.tolist()]) + " |\n"
 
