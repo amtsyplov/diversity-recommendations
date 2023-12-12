@@ -57,3 +57,10 @@ def seed_everything(seed: int):
     torch.cuda.manual_seed(seed)
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = True
+
+
+def get_workdir(config: dict, file: str):
+    if "workdir" in config:
+        return config["workdir"]
+
+    return os.path.join(os.path.dirname(os.path.abspath(file)), "workdir")

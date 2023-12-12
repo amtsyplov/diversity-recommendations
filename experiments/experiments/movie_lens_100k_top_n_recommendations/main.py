@@ -1,12 +1,22 @@
 import os
+from typing import Optional
 
 import click
 import mlflow
 import torch
 from divrec_experiments.datasets import movie_lens_load
-from divrec_experiments.utils import create_if_not_exist, get_logger, seed_everything, load_yaml
+from divrec_experiments.utils import (
+    load_yaml,
+    get_logger,
+    get_workdir,
+    create_if_not_exist,
+    seed_everything,
+)
 
-from divrec.datasets import PairWiseDataset, RankingDataset
+from divrec.datasets import (
+    PairWiseDataset,
+    RankingDataset,
+)
 from divrec.metrics import (
     AUCScore,
     EntropyDiversityScore,
@@ -16,8 +26,29 @@ from divrec.metrics import (
     PrecisionAtKScore,
     RecallAtKScore,
 )
-from divrec.models import RandomModel
-from divrec.train.utils import pair_wise_score_loop, recommendations_score_loop
+from divrec.models import RankingModel
+from divrec.train import (
+    pair_wise_score_loop,
+    recommendations_score_loop,
+)
+
+
+class TopRecommendations(RankingModel):
+    def __init__(self, no_items: int, interactions: torch.LongTensor):
+        torch.nn.Module.__init__(self)
+        self.no_items = no_items
+        items, popularity = torch.unique(interactions[:, 1], return_counts=True)
+        self.popularity = torch.zeros(no_items)
+        self.popularity[items] = popularity.float()
+
+    def forward(
+        self,
+        user_id: torch.LongTensor,
+        item_id: torch.LongTensor,
+        user_features: Optional[torch.Tensor],
+        item_features: Optional[torch.Tensor],
+    ) -> torch.Tensor:
+        return self.popularity[item_id]
 
 
 @click.command()
@@ -25,20 +56,20 @@ from divrec.train.utils import pair_wise_score_loop, recommendations_score_loop
 def main(config_path: str) -> None:
     # --- instantiate config, logger and mlflow client ---
     config = load_yaml(config_path)
-    workdir = config["workdir"] if "workdir" in config else os.path.abspath("workdir")
+    workdir = get_workdir(config, __file__)
     create_if_not_exist(workdir)
     logger = get_logger(
-        config["mlflow_experiment"],
+        config["mlflow_experiment_name"],
         filepath=os.path.join(workdir, config["logfile"]),
     )
     mlflow.set_tracking_uri(config["mlflow_tracking_uri"])
-    mlflow.set_experiment(config["mlflow_experiment"])
-    mlflow.log_artifact(config_path)  # save config for experiment
+    mlflow.set_experiment(config["mlflow_experiment_name"])
+    mlflow.log_artifact(config_path)
     seed_everything(config["seed"])
 
     # --- load and preprocess dataset ---
     dataset = movie_lens_load(config["data_directory"])
-    logger.info("Successfully load data")
+    logger.info("Successfully load dataset")
     mlflow.log_param("number_of_users", dataset.train.number_of_users)
     mlflow.log_param("number_of_items", dataset.train.number_of_items)
     mlflow.log_param(
@@ -49,7 +80,9 @@ def main(config_path: str) -> None:
     mlflow.log_param("test_interactions_count", dataset.test.number_of_interactions)
 
     # --- model instantiating ---
-    model = RandomModel(dataset.test.number_of_users, dataset.test.number_of_items)
+    model = TopRecommendations(
+        dataset.train.number_of_items, dataset.train.interactions
+    )
     model.to(config["device"])
 
     # --- model saving ---
@@ -69,7 +102,7 @@ def main(config_path: str) -> None:
         **config["test_pairwise_loader"],
     )
     logger.info(f"test AUC: {scores[0].item()}")
-    mlflow.log_metric("auc_score", scores[0].item())
+    mlflow.log_metric("test_auc_score", scores[0].item())
 
     losses = [
         EntropyDiversityScore(dataset=dataset.train),

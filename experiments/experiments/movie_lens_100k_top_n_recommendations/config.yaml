@@ -1,5 +1,5 @@
 mlflow_tracking_uri: http://127.0.0.1:8080/
-mlflow_experiment_name: top_n_recommendations
+mlflow_experiment_name: movie_lens_100k_top_n_recommendations
 logfile: main.log
 data_directory: /Users/alexey.tsyplov/Projects/diversity-recommendations/experiments/data/ml-100k
 device: cpu

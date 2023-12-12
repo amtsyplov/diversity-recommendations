@@ -31,6 +31,7 @@ from divrec_experiments.datasets import movie_lens_load
 from divrec_experiments.utils import (
     load_yaml,
     get_logger,
+    get_workdir,
     create_if_not_exist,
     seed_everything,
 )
@@ -90,7 +91,7 @@ def train_validation_split(
 def main(config_path: str) -> None:
     # --- instantiate config, logger and mlflow client ---
     config = load_yaml(config_path)
-    workdir = config["workdir"] if "workdir" in config else os.path.abspath("workdir")
+    workdir = get_workdir(config, __file__)
     create_if_not_exist(workdir)
     logger = get_logger(
         config["mlflow_experiment_name"],
@@ -149,7 +150,7 @@ def main(config_path: str) -> None:
             validation_dataset, model, [AUCScore()], **config["validation_loader"]
         )
         logger.info(f"Epoch [{epoch + 1}/{epochs}] validation AUC: {scores[0]:.6f}")
-        mlflow.log_metric("auc_score", scores[0], step=epoch)
+        mlflow.log_metric("validation_auc_score", scores[0], step=epoch)
 
     logger.info("Successfully finished model train")
 
@@ -170,7 +171,7 @@ def main(config_path: str) -> None:
         **config["test_pairwise_loader"],
     )
     logger.info(f"test AUC: {scores[0].item()}")
-    mlflow.log_metric("auc_score", scores[0].item())
+    mlflow.log_metric("test_auc_score", scores[0].item())
 
     losses = [
         EntropyDiversityScore(dataset=dataset.train),
