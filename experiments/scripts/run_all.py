@@ -15,7 +15,6 @@ if __name__ == '__main__':
             experiments.append(directory)
     logger.info(f"Found {len(experiments)} experiments: {', '.join(experiments)}")
 
-    os.system(f"source ")
     for experiment in experiments:
         program = f"{os.path.join(EXPERIMENTS_DIR, experiment)}/main.py"
         config = f"{os.path.join(EXPERIMENTS_DIR, experiment)}/config.yaml"
