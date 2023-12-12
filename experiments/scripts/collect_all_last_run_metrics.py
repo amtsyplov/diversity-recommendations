@@ -4,7 +4,7 @@ from typing import List
 from dataclasses import dataclass
 
 import pandas as pd
-from divrec_experiments.utils import load_yaml, get_logger, create_if_not_exist
+from divrec_experiments.utils import load_yaml, get_logger, create_if_not_exist, get_workdir
 
 
 COLUMNS = [
@@ -72,10 +72,11 @@ def collect_run_metrics(experiment_path: str, run: Run) -> pd.DataFrame:
 
 @click.command()
 @click.option("-s", "--source", "source", default=".mlruns", type=str)
-@click.option("-w", "--workdir", "workdir", default="workdir", type=str)
 @click.option("-t", "--target", "target", default="runs.csv", type=str)
-def main(source: str, workdir, target: str) -> None:
+def main(source: str, target: str) -> None:
     logger = get_logger(__file__)
+    workdir = get_workdir({}, __file__)
+    create_if_not_exist(workdir)
     root = os.path.abspath(source)
     experiments = find_experiments(root)
     logger.info(f"Found experiments: {', '.join(experiments)}")
@@ -89,8 +90,7 @@ def main(source: str, workdir, target: str) -> None:
             logger.info(f"Finish processing \"{experiment}/{run.id}\"")
         except FileNotFoundError:
             logger.warning(f"There are no metrics in {experiment_path}/{run.id}/")
-    create_if_not_exist(os.path.abspath(workdir))
-    values.to_csv(os.path.join(os.path.abspath(workdir), target), index=False)
+    values.to_csv(os.path.join(workdir, target), index=False)
 
 
 if __name__ == '__main__':

@@ -1,6 +1,6 @@
 ## Current results:
 
-| experiment | test_auc_score | recall_at_10 | precision_at_10 | mean_average_precision_at_10 | ndcg_at_10 | pri_at_10 | entropy_diversity_at_10 |
+| experiment | test_auc | recall_at_10 | precision_at_10 | mean_average_precision_at_10 | ndcg_at_10 | pri_at_10 | entropy_diversity_at_10 |
 | :--- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
 | movie_lens_100k_mf_bpr | 0.847677 | 0.105514 | 0.105514 | 0.119480 | 0.113007 | 0.191468 | 0.745875 |
 | movie_lens_100k_mf_mse | 0.547033 | 0.000530 | 0.000530 | 0.000299 | 0.000413 | -0.237069 | 0.886510 |
