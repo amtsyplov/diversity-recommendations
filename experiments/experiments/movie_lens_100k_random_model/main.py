@@ -4,7 +4,7 @@ import click
 import mlflow
 import torch
 from divrec_experiments.datasets import movie_lens_load
-from divrec_experiments.utils import create_if_not_exist, get_logger, seed_everything, load_yaml
+from divrec_experiments.utils import create_if_not_exist, get_logger, get_workdir, seed_everything, load_yaml
 
 from divrec.datasets import PairWiseDataset, RankingDataset
 from divrec.metrics import (
@@ -25,7 +25,7 @@ from divrec.train.utils import pair_wise_score_loop, recommendations_score_loop
 def main(config_path: str) -> None:
     # --- instantiate config, logger and mlflow client ---
     config = load_yaml(config_path)
-    workdir = config["workdir"] if "workdir" in config else os.path.abspath("workdir")
+    workdir = get_workdir(config, __file__)
     create_if_not_exist(workdir)
     logger = get_logger(
         config["mlflow_experiment"],

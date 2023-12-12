@@ -31,6 +31,7 @@ from divrec_experiments.datasets import movie_lens_load
 from divrec_experiments.utils import (
     load_yaml,
     get_logger,
+    get_workdir,
     create_if_not_exist,
     seed_everything,
 )
@@ -90,7 +91,7 @@ def train_validation_split(
 def main(config_path: str) -> None:
     # --- instantiate config, logger and mlflow client ---
     config = load_yaml(config_path)
-    workdir = config["workdir"] if "workdir" in config else os.path.abspath("workdir")
+    workdir = get_workdir(config, __file__)
     create_if_not_exist(workdir)
     logger = get_logger(
         config["mlflow_experiment_name"],
