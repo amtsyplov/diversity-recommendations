@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import List, Optional
+from typing import List, Optional, Union
 
 import torch
 
@@ -95,7 +95,7 @@ class UserItemInteractionsDataset:
 
 
 def get_user_features(
-    data: UserItemInteractionsDataset, user_id: int
+    data: UserItemInteractionsDataset, user_id: Union[int, torch.LongTensor]
 ) -> Optional[torch.Tensor]:
     if data.user_features is None:
         return None
@@ -103,7 +103,7 @@ def get_user_features(
 
 
 def get_item_features(
-    data: UserItemInteractionsDataset, item_id: int
+    data: UserItemInteractionsDataset, item_id: Union[int, torch.LongTensor]
 ) -> Optional[torch.Tensor]:
     if data.item_features is None:
         return None

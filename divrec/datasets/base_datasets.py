@@ -1,8 +1,8 @@
 import random
-from typing import Iterator, Optional, Tuple
+from typing import Iterator, List, Optional, Tuple
 
 import torch
-from torch.utils.data import Dataset, IterableDataset, DataLoader
+from torch.utils.data import Dataset, IterableDataset, DataLoader, Sampler
 
 from divrec.datasets.storages import (
     UserItemInteractionsDataset,
@@ -26,6 +26,16 @@ PairWiseRow = Tuple[
     Optional[torch.Tensor],  # user features
     Optional[torch.Tensor],  # positive item features
     Optional[torch.Tensor],  # negative item features
+]
+
+
+PairWiseListRow = Tuple[
+    int,  # user_id
+    torch.LongTensor,  # positive items id
+    torch.LongTensor,  # negative items id
+    Optional[torch.Tensor],  # user features
+    Optional[torch.Tensor],  # positive items features
+    Optional[torch.Tensor],  # negative items features
 ]
 
 
@@ -108,6 +118,85 @@ class PairWiseDataset(IterableDataset):
 
     def loader(self, **loader_params) -> DataLoader:
         return DataLoader(self, **loader_params)
+
+
+class PairWiseListDataset(Dataset):
+    """
+    Gives the user_id and two list: positives and negatives
+    for user. And it's features.
+    """
+
+    def __init__(
+        self,
+        data: UserItemInteractionsDataset,
+        frozen: Optional[UserItemInteractionsDataset] = None,
+        max_sampled: int = 100,
+    ):
+        self.data = data
+        self.frozen = frozen
+        self.max_sampled = max_sampled
+        self.items = frozenset(range(self.data.number_of_items))
+
+    def __len__(self):
+        return self.data.number_of_users
+
+    def __getitem__(self, user_id: int) -> PairWiseListRow:
+        positives = frozenset(
+            self.data.interactions[self.data.interactions[:, 0] == user_id, 1].tolist()
+        )
+        negatives = self.items - positives
+        if self.frozen is not None:
+            frozen = frozenset(
+                self.frozen.interactions[
+                    self.frozen.interactions[:, 0] == user_id, 1
+                ].tolist()
+            )
+            negatives -= frozen
+
+        positives = torch.LongTensor(list(positives))
+        negatives = torch.LongTensor(list(negatives))
+        return (
+            user_id,
+            positives,
+            negatives,
+            get_user_features(self.data, user_id),
+            get_item_features(self.data, positives),
+            get_item_features(self.data, negatives),
+        )
+
+
+class PairWiseListSampler(Sampler[List[int]]):
+    def __init__(
+        self,
+        dataset: PairWiseListDataset,
+        batch_size: int,
+        drop_last: bool,
+        data_source=None,
+    ):
+        Sampler.__init__(self, data_source=data_source)
+        assert dataset.frozen is None or dataset.max_sampled > 0
+        assert batch_size > 0
+        self.batch_size = batch_size
+        self.drop_last = drop_last
+        self.lengths = torch.LongTensor(
+            [
+                torch.sum(dataset.data.interactions[:, 0] == user).item()
+                for user in range(dataset.data.number_of_users)
+            ]
+        )
+        self.indexes = torch.arange(len(dataset))
+
+    def __iter__(self):
+        for length, count in torch.unique(self.lengths, return_counts=True):
+            indexes = iter(self.indexes[self.lengths == length])
+            batch_count = count // self.batch_size
+            last_batch_size = count % self.batch_size
+            for _ in range(batch_count):
+                batch = [next(indexes) for _ in range(self.batch_size)]
+                yield batch
+            if not self.drop_last and last_batch_size > 0:
+                batch = [next(indexes) for _ in range(last_batch_size)]
+                yield batch
 
 
 class RankingDataset(IterableDataset):

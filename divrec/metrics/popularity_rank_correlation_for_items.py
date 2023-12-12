@@ -18,7 +18,7 @@ def spearman_rank_correlation(
     n = a.size(0)
     if evaluate_rank:
         d = rank(a) - rank(b)
-        return 1 - 6 * torch.sum(d**2) / n / (n**2 - 1)
+        return 1 - 6 * torch.sum(d ** 2) / n / (n ** 2 - 1)
     a_std, a_mean = torch.std_mean(a)
     b_std, b_mean = torch.std_mean(b)
     return torch.mean((a - a_mean) * (b - b_mean)) / a_std / b_std
@@ -60,4 +60,6 @@ class PRI(RecommendationsAwareLoss, DatasetAwareLoss):
         self, interactions: torch.LongTensor, recommendations: torch.LongTensor
     ) -> torch.Tensor:
         items, ranks = avg_rank(recommendations)
-        return spearman_rank_correlation(self.popularity_rank[items], ranks, evaluate_rank=False)
+        return spearman_rank_correlation(
+            self.popularity_rank[items], ranks, evaluate_rank=False
+        )
