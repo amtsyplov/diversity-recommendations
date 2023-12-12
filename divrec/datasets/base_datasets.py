@@ -164,27 +164,44 @@ class PairWiseListDataset(Dataset):
             get_item_features(self.data, negatives),
         )
 
+    def loader(
+        self,
+        batch_size: int = 1,
+        drop_last: bool = False,
+        data_source=None,
+        **loader_params
+    ) -> DataLoader:
+        assert self.max_sampled > 0 or self.frozen is None
+        sampler = SameInteractionsCountSampler(
+            self.data, batch_size, drop_last, data_source=data_source
+        )
+        return DataLoader(self, sampler=sampler, **loader_params)
 
-class PairWiseListSampler(Sampler[List[int]]):
+
+class SameInteractionsCountSampler(Sampler[List[int]]):
+    """
+    Gives an Iterator[List[int]] via list of users
+    with the same number of interactions in each list.
+    """
+
     def __init__(
         self,
-        dataset: PairWiseListDataset,
+        dataset: UserItemInteractionsDataset,
         batch_size: int,
         drop_last: bool,
         data_source=None,
     ):
         Sampler.__init__(self, data_source=data_source)
-        assert dataset.frozen is None or dataset.max_sampled > 0
         assert batch_size > 0
         self.batch_size = batch_size
         self.drop_last = drop_last
         self.lengths = torch.LongTensor(
             [
-                torch.sum(dataset.data.interactions[:, 0] == user).item()
-                for user in range(dataset.data.number_of_users)
+                torch.sum(dataset.interactions[:, 0] == user).item()
+                for user in range(dataset.number_of_users)
             ]
         )
-        self.indexes = torch.arange(len(dataset))
+        self.indexes = torch.arange(dataset.number_of_users)
 
     def __iter__(self):
         for length, count in torch.unique(self.lengths, return_counts=True):
