@@ -24,7 +24,7 @@ def main(workdir: str, source: str) -> None:
 
     content = "## Current results:\n\n"
     content += "| experiment | "
-    content += " | ".join([col.replace("score_", "").replace("atk_", "") for col in data.columns.tolist()]) + " |\n"
+    content += " | ".join([col.replace("_score", "").replace("_atk", "") for col in data.columns.tolist()]) + " |\n"
     content += "| :--- | " + " | ".join(["---:" for _ in data.columns]) + " |\n"
     for name, row in zip(data.index.tolist(), data.values):
         content += f"| {name} | " + " | ".join([f"{v:.6f}" for v in row.tolist()]) + " |\n"
