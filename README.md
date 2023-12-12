@@ -41,5 +41,5 @@ cd experiments
 # run mlflow server at http://127.0.0.1:8080/
 sh bin/run_mlflow_server.sh
 
-python3 run_all.py 
+python3 scripts/run_all.py 
 ```
