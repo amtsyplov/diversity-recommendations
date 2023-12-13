@@ -2,7 +2,7 @@ from typing import Tuple
 
 import torch
 
-from divrec.datasets.base_datasets import UserItemInteractionsDataset
+from divrec.datasets.storages import UserItemInteractionsDataset
 
 
 def train_validation_split(
