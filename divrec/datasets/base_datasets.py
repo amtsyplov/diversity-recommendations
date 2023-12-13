@@ -1,8 +1,8 @@
 import random
-from typing import Iterator, List, Optional, Tuple
+from typing import Iterator, Optional, Tuple, FrozenSet
 
 import torch
-from torch.utils.data import Dataset, IterableDataset, DataLoader, Sampler
+from torch.utils.data import Dataset, IterableDataset, DataLoader
 
 from divrec.datasets.storages import (
     UserItemInteractionsDataset,
@@ -125,7 +125,6 @@ class PairWiseListDataset(Dataset):
     Gives the user_id and two list: positives and negatives
     for user. And it's features.
     """
-
     def __init__(
         self,
         data: UserItemInteractionsDataset,
@@ -153,8 +152,7 @@ class PairWiseListDataset(Dataset):
             )
             negatives -= frozen
 
-        positives = torch.LongTensor(list(positives))
-        negatives = torch.LongTensor(list(negatives))
+        positives, negatives = self.sample(positives, negatives)
         return (
             user_id,
             positives,
@@ -164,56 +162,13 @@ class PairWiseListDataset(Dataset):
             get_item_features(self.data, negatives),
         )
 
-    def loader(
-        self,
-        batch_size: int = 1,
-        drop_last: bool = False,
-        data_source=None,
-        **loader_params
-    ) -> DataLoader:
-        assert self.max_sampled > 0 or self.frozen is None
-        sampler = SameInteractionsCountSampler(
-            self.data, batch_size, drop_last, data_source=data_source
-        )
-        return DataLoader(self, sampler=sampler, **loader_params)
-
-
-class SameInteractionsCountSampler(Sampler[List[int]]):
-    """
-    Gives an Iterator[List[int]] via list of users
-    with the same number of interactions in each list.
-    """
-
-    def __init__(
-        self,
-        dataset: UserItemInteractionsDataset,
-        batch_size: int,
-        drop_last: bool,
-        data_source=None,
-    ):
-        Sampler.__init__(self, data_source=data_source)
-        assert batch_size > 0
-        self.batch_size = batch_size
-        self.drop_last = drop_last
-        self.lengths = torch.LongTensor(
-            [
-                torch.sum(dataset.interactions[:, 0] == user).item()
-                for user in range(dataset.number_of_users)
-            ]
-        )
-        self.indexes = torch.arange(dataset.number_of_users)
-
-    def __iter__(self):
-        for length, count in torch.unique(self.lengths, return_counts=True):
-            indexes = iter(self.indexes[self.lengths == length])
-            batch_count = count // self.batch_size
-            last_batch_size = count % self.batch_size
-            for _ in range(batch_count):
-                batch = [next(indexes) for _ in range(self.batch_size)]
-                yield batch
-            if not self.drop_last and last_batch_size > 0:
-                batch = [next(indexes) for _ in range(last_batch_size)]
-                yield batch
+    def sample(self, pos: FrozenSet[int], neg: FrozenSet[int]) -> Tuple[torch.LongTensor, torch.LongTensor]:
+        positives = list(pos)
+        negatives = list(neg)
+        if self.max_sampled > 0:
+            positives = random.choices(positives, k=self.max_sampled)
+            negatives = random.choices(negatives, k=self.max_sampled)
+        return torch.LongTensor(positives), torch.LongTensor(negatives)
 
 
 class RankingDataset(IterableDataset):
