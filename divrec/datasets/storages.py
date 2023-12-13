@@ -108,3 +108,11 @@ def get_item_features(
     if data.item_features is None:
         return None
     return data.item_features.features[item_id]
+
+
+def get_user_interactions(
+    data: UserItemInteractionsDataset, user_id: int
+) -> Optional[torch.LongTensor]:
+    if data.interactions is None:
+        return None
+    return data.interactions[data.interactions[:, 0] == user_id, 1]
