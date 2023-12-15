@@ -1,5 +1,5 @@
 import random
-from typing import Iterator, List, Optional, Tuple, FrozenSet
+from typing import Iterable, Iterator, List, Optional, Tuple, FrozenSet
 
 import torch
 from torch.utils.data import Dataset, IterableDataset, DataLoader
@@ -43,6 +43,33 @@ RankingRow = Tuple[
     torch.Tensor,  # repeated user features
     torch.Tensor,  # negative item features
 ]
+
+
+def sample(
+    pos: Iterable[int], neg: Iterable[int], max_sampled: int = -1
+) -> Tuple[List[int], List[int]]:
+    positives = list(pos)
+    negatives = list(neg)
+    if max_sampled > 0:
+        positives = random.choices(positives, k=max_sampled)
+        negatives = random.choices(negatives, k=max_sampled)
+    return positives, negatives
+
+
+def explode(
+    pos: Iterable[int], neg: Iterable[int], max_sampled: int = -1
+) -> Iterator[Tuple[int, int]]:
+    positives = list(pos)
+    negatives = list(neg)
+    if max_sampled > 0:
+        positives = random.choices(positives, k=max_sampled)
+        negatives = random.choices(negatives, k=max_sampled)
+        for p, n in zip(positives, negatives):  # exactly max_sampled pairs for user
+            yield p, n
+    else:  # cartesian product of positives and negatives
+        for p in positives:
+            for n in negatives:
+                yield p, n
 
 
 class PairWiseLists:
@@ -95,28 +122,6 @@ class PairWiseLists:
             return self.items - positives - frozen
         return self.items - frozen
 
-    def sample(
-        self, pos: FrozenSet[int], neg: FrozenSet[int]
-    ) -> Tuple[List[int], List[int]]:
-        positives = list(pos)
-        negatives = list(neg)
-        if self.max_sampled > 0:
-            positives = random.choices(positives, k=self.max_sampled)
-            negatives = random.choices(negatives, k=self.max_sampled)
-        return positives, negatives
-
-    def explode(
-        self, pos: FrozenSet[int], neg: FrozenSet[int]
-    ) -> Iterator[Tuple[int, int]]:
-        positives, negatives = self.sample(pos, neg)
-        if self.max_sampled > 0:
-            for p, n in zip(positives, negatives):  # exactly max_sampled pairs for user
-                yield p, n
-        else:  # cartesian product of positives and negatives
-            for p in positives:
-                for n in negatives:
-                    yield p, n
-
 
 class PointWiseDataset(Dataset):
     def __init__(self, data: UserItemInteractionsDataset):
@@ -167,7 +172,7 @@ class PairWiseDataset(IterableDataset, PairWiseLists):
             user_features = self.data.get_user_features(user_id)
             positives = self.get_positives(user_id)
             negatives = self.get_negatives(user_id, pos=positives)
-            for pos, neg in self.explode(positives, negatives):
+            for pos, neg in explode(positives, negatives, max_sampled=self.max_sampled):
                 pos_features = self.data.get_item_features(pos)
                 neg_features = self.data.get_item_features(neg)
                 yield (
@@ -198,7 +203,9 @@ class PairWiseListDataset(Dataset, PairWiseLists):
     def __getitem__(self, user_id: int) -> PairWiseListRow:
         positives = self.get_positives(user_id)
         negatives = self.get_negatives(user_id, pos=positives)
-        positives, negatives = self.sample(positives, negatives)
+        positives, negatives = sample(
+            positives, negatives, max_sampled=self.max_sampled
+        )
         positives, negatives = torch.LongTensor(positives), torch.LongTensor(negatives)
         return (
             user_id,
@@ -238,25 +245,28 @@ class RankingDataset(IterableDataset, PairWiseLists):
             exclude_positives=False,
         )
 
-    def __getitem__(self, item):
-        raise NotImplementedError("__getitem__ is not available for IterableDataset")
+    def __getitem__(self, user_id: int) -> RankingRow:
+        positives = torch.LongTensor(list(self.get_positives(user_id)))
+
+        negatives = torch.LongTensor(
+            list(self.get_negatives(user_id))
+        )  # all items except frozen
+        neg_features = self.data.get_item_features(negatives)
+
+        repeated_user_id = torch.LongTensor([user_id for _ in negatives])
+        repeated_user_features = self.data.get_user_features(repeated_user_id)
+
+        yield (
+            repeated_user_id,
+            positives,
+            negatives,
+            repeated_user_features,
+            neg_features,
+        )
+
+    def __len__(self):
+        return self.data.number_of_users
 
     def __iter__(self) -> Iterator[RankingRow]:
         for user_id in range(self.data.number_of_users):
-            positives = torch.LongTensor(list(self.get_positives(user_id)))
-
-            negatives = torch.LongTensor(
-                list(self.get_negatives(user_id))
-            )  # all items except frozen
-            neg_features = self.data.get_item_features(negatives)
-
-            repeated_user_id = torch.LongTensor([user_id for _ in negatives])
-            repeated_user_features = self.data.get_user_features(repeated_user_id)
-
-            yield (
-                repeated_user_id,
-                positives,
-                negatives,
-                repeated_user_features,
-                neg_features,
-            )
+            yield self[user_id]

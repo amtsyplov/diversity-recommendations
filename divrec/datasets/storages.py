@@ -122,27 +122,3 @@ class UserItemInteractionsDataset:
         elif isinstance(item_id, int):
             return self.interactions[self.interactions[:, 1] == item_id, 0]
         return self.interactions[torch.isin(self.interactions[:, 1], item_id), 0]
-
-
-def get_user_features(
-    data: UserItemInteractionsDataset, user_id: Union[int, torch.LongTensor]
-) -> torch.Tensor:
-    return data.get_user_features(user_id)
-
-
-def get_item_features(
-    data: UserItemInteractionsDataset, item_id: Union[int, torch.LongTensor]
-) -> torch.Tensor:
-    return data.get_item_features(item_id)
-
-
-def get_user_interactions(
-    data: UserItemInteractionsDataset, user_id: Union[int, torch.LongTensor]
-) -> Optional[torch.LongTensor]:
-    return data.get_user_interactions(user_id)
-
-
-def get_item_interactions(
-    data: UserItemInteractionsDataset, item_id: Union[int, torch.LongTensor]
-) -> Optional[torch.LongTensor]:
-    return data.get_item_interactions(item_id)
