@@ -19,7 +19,7 @@ class ScoreWithReduction:
         self.reduce = reduce and reduction != "none"
         self.reduction = reduction
 
-    def reduce_loss_values(self, loss_values: torch.Tensor):
+    def reduce_loss_values(self, loss_values: torch.Tensor) -> torch.Tensor:
         if not self.reduce:
             return loss_values
         elif self.reduction == "mean":
@@ -36,7 +36,7 @@ class PointWiseLoss(torch.nn.Module, ScoreWithReduction):
         torch.nn.Module.__init__(self)
         ScoreWithReduction.__init__(self, *args, **kwargs)
 
-    def forward(self, true_relevance: torch.Tensor, predicted_relevance: torch.Tensor):
+    def forward(self, true_relevance: torch.Tensor, predicted_relevance: torch.Tensor) -> torch.Tensor:
         return self.reduce_loss_values(
             self.point_wise(true_relevance, predicted_relevance)
         )
@@ -54,7 +54,7 @@ class PairWiseLoss(torch.nn.Module, ScoreWithReduction):
         torch.nn.Module.__init__(self)
         ScoreWithReduction.__init__(self, *args, **kwargs)
 
-    def forward(self, positives: torch.Tensor, negatives: torch.Tensor):
+    def forward(self, positives: torch.Tensor, negatives: torch.Tensor) -> torch.Tensor:
         return self.reduce_loss_values(self.pair_wise(positives, negatives))
 
     def pair_wise(
@@ -72,7 +72,7 @@ class RecommendationsAwareLoss(torch.nn.Module, ScoreWithReduction):
 
     def forward(
         self, interactions: torch.LongTensor, recommendations: torch.LongTensor
-    ):
+    ) -> torch.Tensor:
         return self.reduce_loss_values(
             self.recommendations_loss(interactions, recommendations)
         )
