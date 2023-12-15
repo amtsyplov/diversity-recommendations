@@ -4,12 +4,8 @@ from typing import Iterator, List, Optional, Tuple, FrozenSet
 import torch
 from torch.utils.data import Dataset, IterableDataset, DataLoader
 
-from divrec.datasets.storages import (
-    UserItemInteractionsDataset,
-    get_item_features,
-    get_user_features,
-    get_user_interactions,
-)
+from divrec.datasets.storages import UserItemInteractionsDataset
+
 
 PointWiseRow = Tuple[
     int,  # user_id
@@ -60,6 +56,17 @@ class PairWiseLists:
         max_sampled: int = 100,
         exclude_positives: bool = True,
     ):
+        """
+
+        :param data: user-item interactions for negative sampling
+        :param frozen: interactions which are neither positive not negative
+        :param max_sampled: if > 0 then number of random (positive, negative)
+         pairs for each user per epoch; else all possible (positive, negative)
+         pairs
+        :param exclude_positives: if True (default) positives and negatives
+        intersection will be empty; else positives may be subset of negatives
+        for each user
+        """
         self.data = data
         self.frozen = frozen
         self.max_sampled = max_sampled
@@ -69,10 +76,10 @@ class PairWiseLists:
     def get_frozen(self, user_id: int) -> FrozenSet[int]:
         if self.frozen is None:
             return frozenset()
-        return frozenset(get_user_interactions(self.frozen, user_id).tolist())
+        return frozenset(self.frozen.get_user_interactions(user_id).tolist())
 
     def get_positives(self, user_id: int) -> FrozenSet[int]:
-        return frozenset(get_user_interactions(self.data, user_id).tolist())
+        return frozenset(self.data.get_user_interactions(user_id).tolist())
 
     def get_negatives(
         self, user_id: int, pos: Optional[FrozenSet[int]] = None
@@ -82,9 +89,11 @@ class PairWiseLists:
         Usable for validation mode when positives are needed as a separated list
         and as a part of the list of items to score. Train mode by default.
         """
-        positives = frozenset() if pos is None or not self.exclude_positives else pos
         frozen = self.get_frozen(user_id)
-        return self.items - positives - frozen
+        if self.exclude_positives:
+            positives = pos if pos is not None else self.get_positives(user_id)
+            return self.items - positives - frozen
+        return self.items - frozen
 
     def sample(
         self, pos: FrozenSet[int], neg: FrozenSet[int]
@@ -118,8 +127,8 @@ class PointWiseDataset(Dataset):
 
     def __getitem__(self, item: int) -> PointWiseRow:
         user_id, item_id = self.data.interactions[item]
-        user_features = get_user_features(self.data, user_id)
-        item_features = get_item_features(self.data, item_id)
+        user_features = self.data.get_user_features(user_id)
+        item_features = self.data.get_item_features(item_id)
         interaction_score = self.data.interaction_scores[item_id]
         return user_id, item_id, user_features, item_features, interaction_score
 
@@ -134,20 +143,33 @@ class PairWiseDataset(IterableDataset, PairWiseLists):
     def __len__(self) -> int:
         if self.max_sampled > 0:
             return self.data.number_of_users * self.max_sampled
-        _, counts = torch.unique(self.data.interactions[:, 0], return_counts=True)
-        return torch.sum(counts * (self.data.number_of_items - counts)).item()
+
+        pos_users, pos_counts = torch.unique(
+            self.data.interactions[:, 0], return_counts=True
+        )
+        frozen_users, frozen_counts = torch.unique(
+            self.frozen.interactions[:, 0], return_counts=True
+        )
+
+        counts = torch.zeros(self.data.number_of_users)
+        counts[pos_users] += pos_counts
+        counts[frozen_users] -= frozen_counts
+
+        return torch.sum(
+            counts[pos_users] * (self.data.number_of_items - counts[pos_users])
+        ).item()
 
     def __getitem__(self, item):
         raise NotImplementedError("__getitem__ is not available for IterableDataset")
 
     def __iter__(self) -> Iterator[PairWiseRow]:
         for user_id in range(self.data.number_of_users):
-            user_features = get_user_features(self.data, user_id)
+            user_features = self.data.get_user_features(user_id)
             positives = self.get_positives(user_id)
             negatives = self.get_negatives(user_id, pos=positives)
             for pos, neg in self.explode(positives, negatives):
-                pos_features = get_item_features(self.data, pos)
-                neg_features = get_item_features(self.data, neg)
+                pos_features = self.data.get_item_features(pos)
+                neg_features = self.data.get_item_features(neg)
                 yield (
                     user_id,
                     pos,
@@ -182,9 +204,9 @@ class PairWiseListDataset(Dataset, PairWiseLists):
             user_id,
             positives,
             negatives,
-            get_user_features(self.data, user_id),
-            get_item_features(self.data, positives),
-            get_item_features(self.data, negatives),
+            self.data.get_user_features(user_id),
+            self.data.get_item_features(positives),
+            self.data.get_item_features(negatives),
         )
 
 
@@ -213,7 +235,7 @@ class RankingDataset(IterableDataset, PairWiseLists):
             data,
             frozen=frozen,
             max_sampled=-1,
-            exclude_positives=True,
+            exclude_positives=False,
         )
 
     def __getitem__(self, item):
@@ -226,10 +248,10 @@ class RankingDataset(IterableDataset, PairWiseLists):
             negatives = torch.LongTensor(
                 list(self.get_negatives(user_id))
             )  # all items except frozen
-            neg_features = get_item_features(self.data, negatives)
+            neg_features = self.data.get_item_features(negatives)
 
             repeated_user_id = torch.LongTensor([user_id for _ in negatives])
-            repeated_user_features = get_user_features(self.data, repeated_user_id)
+            repeated_user_features = self.data.get_user_features(repeated_user_id)
 
             yield (
                 repeated_user_id,
