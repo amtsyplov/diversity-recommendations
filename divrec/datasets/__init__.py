@@ -9,7 +9,14 @@ from .base_datasets import (
     RankingDataset,
 )
 from .samplers import SameInteractionsCountSampler
-from .storages import UserItemInteractionsDataset, Features
+from .storages import (
+    Features,
+    UserItemInteractionsDataset,
+    get_user_features,
+    get_item_features,
+    get_user_interactions,
+    get_item_interactions,
+)
 from .utils import train_validation_split
 
 
@@ -25,5 +32,9 @@ __all__ = [
     "RankingDataset",
     "RankingRow",
     "SameInteractionsCountSampler",
+    "get_user_features",
+    "get_item_features",
+    "get_user_interactions",
+    "get_item_interactions",
     "train_validation_split",
 ]
