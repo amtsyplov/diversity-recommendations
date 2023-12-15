@@ -20,7 +20,9 @@ class SameInteractionsCountSampler(Sampler):
         assert batch_size > 0
         self.batch_size = batch_size
         self.drop_last = drop_last
-        self.indexes, self.lengths = torch.unique(dataset.interactions[:, 0], return_counts=True)
+        self.indexes, self.lengths = torch.unique(
+            dataset.interactions[:, 0], return_counts=True
+        )
 
     def __iter__(self):
         for length, count in zip(*torch.unique(self.lengths, return_counts=True)):

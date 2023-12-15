@@ -9,20 +9,20 @@ def train_validation_split(
     dataset: UserItemInteractionsDataset, validation_size: int
 ) -> Tuple[UserItemInteractionsDataset, UserItemInteractionsDataset]:
     """
-    Divides UserItemInteractionsDataset interactions into two parts:
-    train and validation. For each user expects at least `validation_size`
-    interactions counts. Extract last (by sorting) `validation_size`
-    interactions for each user into validation sample and train sample
-    is all other interactions.
+        Divides UserItemInteractionsDataset interactions into two parts:
+        train and validation. For each user expects at least `validation_size`
+        interactions counts. Extract last (by sorting) `validation_size`
+        interactions for each user into validation sample and train sample
+        is all other interactions.
 
-    item_features
-user_features
-number_of_items
-number_of_users
+        item_features
+    user_features
+    number_of_items
+    number_of_users
 
-    :param dataset: train data
-    :param validation_size: number of items per user used for validation
-    :return: tuple of train and validation dataset
+        :param dataset: train data
+        :param validation_size: number of items per user used for validation
+        :return: tuple of train and validation dataset
     """
     train_interactions = list()
     train_interactions_scores = list()

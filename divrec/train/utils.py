@@ -51,7 +51,9 @@ def pair_wise_score_loop(
 
 
 def get_model_recommendations(
-    dataset: RankingDataset, model: RankingModel, number_of_recommendations: int,
+    dataset: RankingDataset,
+    model: RankingModel,
+    number_of_recommendations: int,
 ) -> torch.LongTensor:
     recommendations = []
     for (
