@@ -206,11 +206,10 @@ class PairWiseListDataset(Dataset, PairWiseLists):
         positives, negatives = sample(
             positives, negatives, max_sampled=self.max_sampled
         )
-        positives, negatives = torch.LongTensor(positives), torch.LongTensor(negatives)
         return (
             user_id,
-            positives,
-            negatives,
+            torch.LongTensor(positives),
+            torch.LongTensor(negatives),
             self.data.get_user_features(user_id),
             self.data.get_item_features(positives),
             self.data.get_item_features(negatives),

@@ -36,7 +36,9 @@ class PointWiseLoss(torch.nn.Module, ScoreWithReduction):
         torch.nn.Module.__init__(self)
         ScoreWithReduction.__init__(self, *args, **kwargs)
 
-    def forward(self, true_relevance: torch.Tensor, predicted_relevance: torch.Tensor) -> torch.Tensor:
+    def forward(
+        self, true_relevance: torch.Tensor, predicted_relevance: torch.Tensor
+    ) -> torch.Tensor:
         return self.reduce_loss_values(
             self.point_wise(true_relevance, predicted_relevance)
         )

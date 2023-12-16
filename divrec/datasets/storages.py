@@ -99,14 +99,18 @@ class UserItemInteractionsDataset:
     def has_interactions(self) -> bool:
         return self.interactions is not None
 
-    def get_user_features(self, user_id: Union[int, torch.LongTensor]) -> torch.Tensor:
+    def get_user_features(
+        self, user_id: Union[int, List[int], torch.LongTensor]
+    ) -> torch.Tensor:
         return self.user_features[user_id]
 
-    def get_item_features(self, item_id: Union[int, torch.LongTensor]) -> torch.Tensor:
+    def get_item_features(
+        self, item_id: Union[int, List[int], torch.LongTensor]
+    ) -> torch.Tensor:
         return self.item_features[item_id]
 
     def get_user_interactions(
-        self, user_id: Union[int, torch.LongTensor]
+        self, user_id: Union[int, List[int], torch.LongTensor]
     ) -> Optional[torch.LongTensor]:
         if self.interactions is None:
             return None
@@ -115,7 +119,7 @@ class UserItemInteractionsDataset:
         return self.interactions[torch.isin(self.interactions[:, 0], user_id), 1]
 
     def get_item_interactions(
-        self, item_id: Union[int, torch.LongTensor]
+        self, item_id: Union[int, List[int], torch.LongTensor]
     ) -> Optional[torch.LongTensor]:
         if self.interactions is None:
             return None

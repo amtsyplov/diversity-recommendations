@@ -20,7 +20,7 @@ def point_wise_score_loop(
         predicted_relevance = model(user_id, item_id, user_features, item_features)
         for loss in losses:
             loss_values[loss.__class__.__name__].append(
-                loss.point_wise(true_relevance, predicted_relevance)
+                loss(true_relevance, predicted_relevance)
             )
     return [
         loss.reduce_loss_values(torch.concatenate(loss_values[loss.__class__.__name__]))
