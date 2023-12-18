@@ -22,7 +22,7 @@ class Features:
 
     def __len__(self) -> int:
         """The number of features"""
-        return len(self.feature_names)
+        return self.features.size(0)
 
     def __getitem__(
         self, item: Union[str, List[str], int, torch.LongTensor]

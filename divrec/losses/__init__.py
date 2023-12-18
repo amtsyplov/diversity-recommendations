@@ -11,6 +11,7 @@ from .intra_list_diversity_score import (
 )
 from .log_sigmoid_difference_loss import LogSigmoidDifferenceLoss
 from .mse_loss import MSELoss
+from .mse_difference_score import MSEDifferenceLoss
 
 __all__ = [
     "LogSigmoidDifferenceLoss",
@@ -21,5 +22,6 @@ __all__ = [
     "RecommendationsAwareLoss",
     "DatasetAwareLoss",
     "MSELoss",
+    "MSEDifferenceLoss",
     "ScoreWithReduction",
 ]

@@ -56,13 +56,14 @@ def get_model_recommendations(
     number_of_recommendations: int,
 ) -> torch.LongTensor:
     recommendations = []
-    for (
-        repeated_user_id,
-        positive_item_id,
-        negative_item_id,
-        repeated_user_features,
-        negative_item_features,
-    ) in dataset:
+    for user_id in range(dataset.data.number_of_users):
+        (
+            repeated_user_id,
+            positive_item_id,
+            negative_item_id,
+            repeated_user_features,
+            negative_item_features,
+        ) = dataset[user_id]
         model_scores = model(
             repeated_user_id,
             negative_item_id,
@@ -177,13 +178,14 @@ def recommendations_train_loop(
     batch_count = 0
     mean_loss = 0.0
     mean_scores = [0.0 for _ in range(len(scores))] if scores is not None else list()
-    for (
-        repeated_user_id,
-        positive_item_id,
-        negative_item_id,
-        repeated_user_features,
-        negative_item_features,
-    ) in dataset:
+    for user_id in range(dataset.data.number_of_users):
+        (
+            repeated_user_id,
+            positive_item_id,
+            negative_item_id,
+            repeated_user_features,
+            negative_item_features,
+        ) = dataset[user_id]
         model_scores = model(
             repeated_user_id,
             negative_item_id,

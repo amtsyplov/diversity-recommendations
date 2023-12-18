@@ -4,45 +4,10 @@ from typing import Iterable, Iterator, List, Optional, Tuple, FrozenSet
 import torch
 from torch.utils.data import Dataset, IterableDataset, DataLoader
 
+from divrec.datasets.base_formats import (
+    PointWiseRow, PairWiseRow, PairWiseListRow, RankingRow, PointWiseBatch, PairWiseBatch, PairWiseListBatch
+)
 from divrec.datasets.storages import UserItemInteractionsDataset
-
-
-PointWiseRow = Tuple[
-    int,  # user_id
-    int,  # item_id
-    torch.Tensor,  # user features
-    torch.Tensor,  # item features
-    float,  # interactions score
-]
-
-
-PairWiseRow = Tuple[
-    int,  # user_id
-    int,  # positive item_id
-    int,  # negative item_id
-    torch.Tensor,  # user features
-    torch.Tensor,  # positive item features
-    torch.Tensor,  # negative item features
-]
-
-
-PairWiseListRow = Tuple[
-    int,  # user_id
-    torch.LongTensor,  # positive items id
-    torch.LongTensor,  # negative items id
-    torch.Tensor,  # user features
-    torch.Tensor,  # positive items features
-    torch.Tensor,  # negative items features
-]
-
-
-RankingRow = Tuple[
-    torch.LongTensor,  # repeated user_id
-    torch.LongTensor,  # positive item_id
-    torch.LongTensor,  # negative item_id
-    torch.Tensor,  # repeated user features
-    torch.Tensor,  # negative item features
-]
 
 
 def sample(
@@ -70,6 +35,47 @@ def explode(
         for p in positives:
             for n in negatives:
                 yield p, n
+
+
+def explode_pair_wise_list_batch(batch: PairWiseListBatch, max_sampled: int = -1) -> PairWiseBatch:
+    (
+        user_id,
+        positives,
+        negatives,
+        user_features,
+        positive_features,
+        negative_features,
+    ) = batch
+    if positives.size(1) == negatives.size(1):  # already max_sampled
+        repeat = positives.size(1)
+        repeated_user_id = torch.ones(repeat, dtype=torch.long).unsqueeze(0) * user_id.unsqueeze(1)
+        repeated_user_features = torch.ones((repeat, user_features.size(1)), dtype=torch.long).unsqueeze(0) * \
+                                 user_features.unsqueeze(1)
+        return (
+            torch.flatten(repeated_user_id).long(),
+            torch.flatten(positives).long(),
+            torch.flatten(negatives).long(),
+            torch.flatten(repeated_user_features, end_dim=1),
+            torch.flatten(positive_features, end_dim=1),
+            torch.flatten(negative_features, end_dim=1),
+        )
+    # TODO: sampling
+    elif max_sampled > 0:
+        positive_indices = torch.concatenate(
+            [torch.randperm(positives.size(1)) for _ in range(positives.size(0))]
+        ).reshape(-1, max_sampled)
+
+        negative_indices = torch.concatenate(
+            [torch.randperm(negatives.size(1)) for _ in range(negatives.size(0))]
+        ).reshape(-1, max_sampled)
+
+        positive_sampled = torch.take_along_dim(positives, positive_indices, dim=1)
+        negative_sampled = torch.take_along_dim(negatives, negative_indices, dim=1)
+        ...
+    else:
+        ...
+        
+
 
 
 class PairWiseLists:
@@ -216,7 +222,7 @@ class PairWiseListDataset(Dataset, PairWiseLists):
         )
 
 
-class RankingDataset(IterableDataset, PairWiseLists):
+class RankingDataset(Dataset, PairWiseLists):
     """
     Maybe the most difficult to understand dataset.
     Has no loader method. In one iteration gives
@@ -255,7 +261,7 @@ class RankingDataset(IterableDataset, PairWiseLists):
         repeated_user_id = torch.LongTensor([user_id for _ in negatives])
         repeated_user_features = self.data.get_user_features(repeated_user_id)
 
-        yield (
+        return (
             repeated_user_id,
             positives,
             negatives,
@@ -265,7 +271,3 @@ class RankingDataset(IterableDataset, PairWiseLists):
 
     def __len__(self):
         return self.data.number_of_users
-
-    def __iter__(self) -> Iterator[RankingRow]:
-        for user_id in range(self.data.number_of_users):
-            yield self[user_id]
